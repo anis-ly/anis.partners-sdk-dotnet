@@ -4,7 +4,9 @@ All notable changes to the `Anis.Partners` package. Versions follow [Semantic Ve
 
 ## [Unreleased]
 
-The first public release.
+## [1.0.0] - 2026-09-28
+
+The first stable release. Unchanged from `1.0.0-preview.1` except for the version.
 
 - Every request signed with RFC 9421 HTTP Message Signatures over P-256/SHA-256, the body bound with an
   RFC 9530 `Content-Digest`; any key custody through `IRequestSigner`, and `EcdsaP256Signer` for a PEM file.
