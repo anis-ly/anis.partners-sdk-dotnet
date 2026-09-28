@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      The suite runs on BOTH supported targets. A target framework that only compiles is not a target
+      framework that works: the two differ in serializer defaults and in BCL behaviour, and shipping an
+      net8.0 assembly nobody has executed is shipping an untested build to the partners most likely to use it.
+    -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      The published conformance vectors, vendored beside the tests: the same set as
+      https://developers.anis.ly/vectors/index.json. Override -p:ConformanceVectors=<path> to run another copy;
+      the suite fails loudly if none is there, because silently running zero vectors is worse than not running.
+    -->
+    <ConformanceVectors Condition="'$(ConformanceVectors)' == ''">$(MSBuildThisFileDirectory)vectors</ConformanceVectors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Copied once, as Content below; not also as the SDK's default None items. -->
+    <None Remove="vectors/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <ProjectReference Include="../../src/Anis.Partners.Sdk/Anis.Partners.Sdk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="$(ConformanceVectors)/request/*.json" Link="vectors/request/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(ConformanceVectors)/response/*.json" Link="vectors/response/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(ConformanceVectors)/enrollment/*.json" Link="vectors/enrollment/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!--
+    The suites enumerate the copied vectors, and PreserveNewest never deletes a file. A vector renamed or
+    removed in the corpus would otherwise live on in bin/ and keep being tested, so the copy starts clean.
+  -->
+  <Target Name="CleanCopiedVectors" BeforeTargets="PrepareForBuild">
+    <RemoveDir Directories="$(OutDir)vectors" />
+  </Target>
+
+  <ItemGroup>
+    <Content Include="../../contracts/*.json" Link="contracts/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

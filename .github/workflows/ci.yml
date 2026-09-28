@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The SDK from global.json builds; the 8.0 runtime is there so the net8.0 tests RUN, not only compile.
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          dotnet-version: 8.0.x
+
+      - name: Build
+        run: dotnet build Anis.Partners.Sdk.slnx -c Release
+
+      - name: Test on net8.0 and net10.0
+        run: dotnet test Anis.Partners.Sdk.slnx -c Release --no-build
+
+      - name: Pack
+        run: dotnet pack src/Anis.Partners.Sdk/Anis.Partners.Sdk.csproj -c Release --no-build -o artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: artifacts/

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Anis.Partners</PackageId>
+    <Title>Anis Partner API client</Title>
+    <Description>Client SDK for the Anis Partner API: RFC 9421 request signing, response verification and the public operations.</Description>
+    <RootNamespace>Anis.Partners.Sdk</RootNamespace>
+    <PackageTags>anis;partners;sdk;rfc9421;http-message-signatures;vouchers;libya</PackageTags>
+    <PackageProjectUrl>https://developers.anis.ly/sdks/dotnet</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>https://github.com/anis-ly/anis.partners-sdk-dotnet/blob/main/CHANGELOG.md</PackageReleaseNotes>
+
+    <!-- The symbols package lets a partner step into this code with the exact sources of the release. -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Both target frameworks are checked for the same public surface on every pack. -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The page NuGet shows: short, and every link absolute, because nuget.org cannot follow a relative one. -->
+    <None Include="PACKAGE.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Abstractions only: the SDK registers into a host's container without dragging one in. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The protocol types are internal; the tests prove them directly against the conformance vectors. -->
+    <InternalsVisibleTo Include="Anis.Partners.Sdk.Tests" />
+  </ItemGroup>
+
+</Project>

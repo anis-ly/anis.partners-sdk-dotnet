@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Anis.Partners.Sdk/Anis.Partners.Sdk.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Anis.Partners.Sample.Console/Anis.Partners.Sample.Console.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Anis.Partners.Sdk.Tests/Anis.Partners.Sdk.Tests.csproj" />
+  </Folder>
+</Solution>
