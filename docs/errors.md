@@ -44,7 +44,7 @@ exception types, which would be a `catch` list nobody maintains.
 | `PriceChangedException` | `price_changed` | the price moved since the catalogue read |
 | `OutOfStockException` | `quantity_unavailable`, `card_unavailable` | not sellable in that quantity, or not at all, now |
 | `LimitExceededException` | `owner_limit_exceeded`, `daily_limit_exceeded` | the owner's spending allowance is used up — **do not poll** |
-| `RateLimitedException` | `rate_limited` | a request-rate limit; wait for `RetryAfter`, then send again |
+| `RateLimitedException` | `rate_limited` | a request-rate limit; wait for `RetryAfter`, then send again — an order **resumes the same id** (it comes back as `OrderOutcomeUnknown`), never a new one |
 | `IdempotencyConflictException` | `idempotency_conflict` | one operation id used for two different orders |
 | `InvalidCredentialsException` | `invalid_credentials` | authentication failed (unknown, revoked or wrong key; bad signature or digest; clock) |
 | `ReplayDetectedException` | `replay_detected` | the same signed bytes arrived twice; calling again is safe — on an order the first copy may have bought, so **resume the same id** (an order comes back as `OrderOutcomeUnknown`) |

@@ -42,6 +42,26 @@ public sealed class OrderOutcomeTests
         Assert.Equal("1234", completed.Credentials[0].Voucher);
     }
 
+    // Anis withheld the codes of an order that was placed and paid (a card invalidated, a code not releasable): the
+    // first report is completed with no credentials and no replay marker. It is still completed: never buy it again.
+    [Fact]
+    public async Task A_completion_whose_codes_are_withheld_is_completed_with_no_credentials()
+    {
+        using var fixture = new PipelineFixture();
+
+        fixture.Stub.Status = HttpStatusCode.Created;
+        fixture.Stub.NoStore = true;
+        fixture.Stub.Location = $"/v1/orders/{Operation:D}";
+        fixture.Stub.Body =
+            $$"""{"operationId":"{{Operation:D}}","status":"completed"}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        var completed = Assert.IsType<OrderCompleted>(result);
+
+        Assert.Empty(completed.Credentials);
+    }
+
     [Fact]
     public async Task A_repeat_after_completion_is_replayed_and_carries_no_credentials()
     {
@@ -182,7 +202,7 @@ public sealed class OrderOutcomeTests
     }
 
     [Fact]
-    public async Task A_rate_limit_carries_the_signed_retry_after()
+    public async Task A_rate_limited_create_leaves_the_order_open_and_carries_the_signed_retry_after()
     {
         using var fixture = new PipelineFixture();
 
@@ -192,11 +212,31 @@ public sealed class OrderOutcomeTests
             """{"type":"https://developers.anis.ly/errors/rate-limited","title":"Too many","status":429,"code":"rate_limited"}""";
 
         var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
-        var notPlaced = Assert.IsType<OrderNotPlaced>(result);
-        var refusal = Assert.IsType<RateLimitedException>(notPlaced.Refusal);
+
+        var unknown = Assert.IsType<OrderOutcomeUnknown>(result);
+        Assert.Equal(Operation, unknown.OperationId);
+        Assert.Equal(TimeSpan.FromSeconds(30), unknown.SuggestedDelay);
+        var refusal = Assert.IsType<RateLimitedException>(unknown.Cause);
         Assert.Equal(TimeSpan.FromSeconds(30), refusal.RetryAfter);
         Assert.True(refusal.IsRetryable);
-        Assert.Equal(OrderRefusalOutcome.NotPlaced, refusal.OrderOutcome);
+        Assert.Equal(OrderRefusalOutcome.Unknown, refusal.OrderOutcome);
+    }
+
+    [Fact]
+    public async Task A_rate_limited_create_without_a_retry_after_suggests_the_default_delay()
+    {
+        using var fixture = new PipelineFixture();
+
+        fixture.Stub.Status = HttpStatusCode.TooManyRequests;
+        fixture.Stub.Body =
+            """{"type":"https://developers.anis.ly/errors/rate-limited","title":"Too many","status":429,"code":"rate_limited"}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        var unknown = Assert.IsType<OrderOutcomeUnknown>(result);
+        Assert.Equal(TimeSpan.FromSeconds(5), unknown.SuggestedDelay);
+        var refusal = Assert.IsType<RateLimitedException>(unknown.Cause);
+        Assert.Null(refusal.RetryAfter);
     }
 
     [Fact]

@@ -105,7 +105,8 @@ public enum OrderRefusalOutcome
 {
     /// <summary>
     /// Nothing was bought and nothing was charged. Fix the cause (see the code), then place the order again
-    /// under a NEW operation id. On a resume, a fresh (not replayed) refusal returns
+    /// under a NEW operation id. A rate limit is not in this group: it leaves the order open, see
+    /// <see cref="Unknown"/>. On a resume, a fresh (not replayed) refusal returns
     /// <see cref="OrderOutcomeUnknown"/> instead, because the earlier attempt may have completed.
     /// </summary>
     NotPlaced = 1,
@@ -150,8 +151,10 @@ public sealed class IdempotencyConflictException(Problem problem, HttpStatusCode
 /// <remarks>
 /// <c>rate_limited</c> only: a limit Anis staff set on this application or wallet (all requests, orders
 /// only, or reveals only), or the gateway's own protection. Honour <see cref="AnisApiException.RetryAfter"/>
-/// when present; otherwise back off exponentially. On an order nothing was placed, so the same operation
-/// id may be sent again once the wait is over.
+/// when present; otherwise back off exponentially. On an order, resume with the SAME operation id once the
+/// wait is over: a first attempt refused here placed nothing, but the SDK cannot tell that from a copy of
+/// an earlier attempt (a host retry handler, or a create sent again after a timeout) that is still selling.
+/// Never place it again under a new id.
 /// </remarks>
 public sealed class RateLimitedException(Problem problem, HttpStatusCode status, TimeSpan? retryAfter = null, bool isReplayed = false)
     : AnisApiException(problem, status, retryAfter, isReplayed);
@@ -245,10 +248,15 @@ public sealed class EnrollmentRefusedException(Problem problem, HttpStatusCode s
 /// Only an answer that never reached an owner decision — an unavailable dependency, a timeout, an internal
 /// error — leaves the operation open.
 ///
-/// <c>replay_detected</c> is the one admission refusal that is open too. It refuses THIS copy because an
-/// identical signed copy arrived first — and that copy passed admission and may have placed the order.
-/// The catalogue says the same: keep the idempotency key for the same intent. A code this SDK version does
-/// not know is treated as open, because resuming is always safe and a new id is not.
+/// <c>replay_detected</c> and <c>rate_limited</c> are the two admission refusals that are open too.
+/// <c>replay_detected</c> refuses THIS copy because an identical signed copy arrived first — and that copy
+/// passed admission and may have placed the order. <c>rate_limited</c> is open because the call may not be
+/// a first attempt: a host retry handler may have resent a create whose first attempt is still selling, or a
+/// create may reuse an id whose earlier attempt timed out. A first-attempt rate limit placed nothing, but the
+/// SDK cannot tell the two apart, so the answer is to resume with the same id (a rate limit is transient
+/// anyway). The other admission refusals stay final. The catalogue says the same: keep the idempotency key
+/// for the same intent. A code this SDK version does not know is treated as open, because resuming is always
+/// safe and a new id is not.
 /// </remarks>
 internal static class OrderRefusals
 {
@@ -259,6 +267,7 @@ internal static class OrderRefusals
             or PartnerErrorCode.InternalError
             or PartnerErrorCode.OperationProcessing
             or PartnerErrorCode.ReplayDetected
+            or PartnerErrorCode.RateLimited
             or PartnerErrorCode.Unknown => OrderRefusalOutcome.Unknown,
         _ => OrderRefusalOutcome.NotPlaced,
     };

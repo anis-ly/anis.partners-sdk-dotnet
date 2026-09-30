@@ -31,7 +31,6 @@ public sealed class ErrorMappingTests
         ["idempotency_conflict"] = (typeof(IdempotencyConflictException), OrderRefusalOutcome.NotPlaced),
 
         // Refused at the door, before any order exists.
-        ["rate_limited"] = (typeof(RateLimitedException), OrderRefusalOutcome.NotPlaced),
         ["insufficient_scope"] = (typeof(AuthorizationException), OrderRefusalOutcome.NotPlaced),
         ["source_ip_not_allowed"] = (typeof(AuthorizationException), OrderRefusalOutcome.NotPlaced),
         ["invalid_credentials"] = (typeof(InvalidCredentialsException), OrderRefusalOutcome.NotPlaced),
@@ -51,6 +50,11 @@ public sealed class ErrorMappingTests
         // Refused at the door, but only because an identical signed copy got in first — and that copy may
         // have placed the order. Resume the same id; a new id could buy twice.
         ["replay_detected"] = (typeof(ReplayDetectedException), OrderRefusalOutcome.Unknown),
+
+        // Refused at the door, but the call may be a resend of an attempt that is still selling (a host
+        // retry handler, or a create sent again after a timeout). A first-attempt rate limit placed nothing,
+        // but the SDK cannot tell the two apart: resume the same id.
+        ["rate_limited"] = (typeof(RateLimitedException), OrderRefusalOutcome.Unknown),
 
         // Reveals.
         ["reveal_not_allowed"] = (typeof(AuthorizationException), OrderRefusalOutcome.NotPlaced),

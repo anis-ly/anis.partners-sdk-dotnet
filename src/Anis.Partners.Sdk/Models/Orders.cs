@@ -128,6 +128,11 @@ public abstract record OrderResult
 /// hidden behind <see cref="OrderReplayed"/>. This is the only chance to read them under
 /// <c>orders:create</c> alone: persist <see cref="Credentials"/> before doing anything else; reading them
 /// again later is a reveal and needs <c>cards:reveal</c>.
+/// <para>
+/// <see cref="Credentials"/> can be EMPTY: Anis withholds the codes of an order that was placed and paid when they
+/// cannot be released (a card invalidated or refunded, a code not releasable). The order is still completed — do not
+/// buy it again; a reveal is refused too, so contact Anis support.
+/// </para>
 /// </remarks>
 public sealed record OrderCompleted(Order Order) : OrderResult(Order.OperationId)
 {
@@ -154,8 +159,8 @@ public sealed record OrderReplayed(Order Order) : OrderResult(Order.OperationId)
 /// <summary>Nobody can say yet whether the order was bought. Resume it with the SAME operation id.</summary>
 /// <remarks>
 /// The call got no answer (a timeout, a lost connection), an answer that could not be verified, a refusal that
-/// reached no decision, or — on a resume — a refusal decided before the order was looked at, which says nothing
-/// about the earlier attempt. The purchase may have happened. Wait <see cref="SuggestedDelay"/>, then call
+/// reached no decision, a rate limit (the call may be a resend of an attempt that is still selling), or — on a
+/// resume — a refusal decided before the order was looked at, which says nothing about the earlier attempt. The purchase may have happened. Wait <see cref="SuggestedDelay"/>, then call
 /// <c>ResumeAsync</c> with the same operation id and the same request. Never place it again under a new id: that
 /// can buy the cards a second time. <see cref="Cause"/> is what ended the call, for your logs.
 /// </remarks>
@@ -165,7 +170,7 @@ public sealed record OrderOutcomeUnknown(Guid OperationId, TimeSpan SuggestedDel
 /// <remarks>
 /// <see cref="Refusal"/> says why, as the typed refusal (<c>PriceChangedException</c>, <c>OutOfStockException</c>,
 /// …) with its <c>Code</c>, <c>RequestId</c> and <c>RetryAfter</c>. Fix the cause, then place a NEW order under a
-/// NEW operation id. A recorded refusal marked replayed returns the same answer under the old id; a fresh
-/// refusal at the door was not recorded and the old id may be accepted on a later call.
+/// NEW operation id. A recorded refusal marked replayed returns the same answer under the old id, so sending it
+/// again is pointless.
 /// </remarks>
 public sealed record OrderNotPlaced(Guid OperationId, AnisApiException Refusal) : OrderResult(OperationId);

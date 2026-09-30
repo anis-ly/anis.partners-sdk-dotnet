@@ -79,10 +79,11 @@ switch (outcome)
 | `OrderCompleted` | a fresh `201`; or the `200` a **resume** receives when the first answer was lost | the credentials, in `Credentials` |
 | `OrderProcessing` | `202` | `RetryAfter`, `Location` |
 | `OrderReplayed` | the same id sent again after it completed: the **original** status (usually `201`) with `Idempotency-Replayed: true` | the operation id, the state and the invoice id — no credentials |
-| `OrderOutcomeUnknown` | no answer (timeout, lost connection), an answer that could not be verified, a refusal that reached no decision, or — on a resume — a refusal that is not the order's recorded answer | `SuggestedDelay`, and `Cause` for your logs |
+| `OrderOutcomeUnknown` | no answer (timeout, lost connection), an answer that could not be verified, a refusal that reached no decision, a rate limit, or — on a resume — a refusal that is not the order's recorded answer | `SuggestedDelay`, and `Cause` for your logs |
 | `OrderNotPlaced` | a refusal that closes the order | `Refusal`: the typed refusal with `Code`, `RequestId`, `RetryAfter`, `IsReplayed` |
 
 Five records rather than one object with nullable members, because the difference between them decides whether you have the credentials — and whether the order was bought.
+
 ## The credential-once rule
 
 **Only the response that FIRST reports the order completed carries the credentials** — the fresh `201`, or
@@ -148,10 +149,12 @@ asks the owner again, and one of them may return the completed order **with its 
 The SDK answers that for you, by the case it returns:
 
 - **`OrderNotPlaced`** — nothing was bought and nothing was charged. Fix the cause (`n.Refusal` says which),
-  then place the order again under a **new** operation id. (For a refusal at the door — a rate limit, a missing
-  scope — on a first attempt nothing was recorded at all, so reusing the same id also works; a new id is always safe.)
+  then place the order again under a **new** operation id.
 - **`OrderOutcomeUnknown`** — no decision was reached and the purchase **may still complete**. Resume with the
-  **same** operation id and the same body. Never a new id. On a **resume**, a refusal that is not the order's
+  **same** operation id and the same body. Never a new id. A **rate limit** lands here too: a first attempt
+  refused for its rate placed nothing, but the SDK cannot tell that from a copy of an earlier attempt (a
+  retry handler in your host, or a create sent again after a timeout) that is still selling, so resume the same
+  id once the wait is over (`SuggestedDelay` is the signed `Retry-After`, or 5 seconds when there is none). On a **resume**, a refusal that is not the order's
   recorded answer lands here too: it was decided before Anis looked at the order, so the earlier attempt's
   outcome is still unknown.
 
@@ -175,11 +178,11 @@ This table classifies a first attempt. On a resume, every fresh (non-replayed) r
 | `idempotency_conflict` | 409 | `IdempotencyConflictException` | OrderNotPlaced | This id already belongs to a **different** order — a bug on your side. That earlier order is untouched; use a new id |
 | `validation_failed`, `currency_not_supported` | 422 | `ValidationFailedException` | OrderNotPlaced | A contract rule was broken; the field is never named — see [Errors](errors.md) |
 | `wallet_not_granted` | 404 | `ResourceNotFoundException` | OrderNotPlaced | The wallet is not granted to this application (or does not exist) |
-| `rate_limited` | 429 | `RateLimitedException` | OrderNotPlaced | Wait for `RetryAfter` (or back off), then send again |
 | `insufficient_scope` | 403 | `AuthorizationException` | OrderNotPlaced | The application lacks `orders:create` — **or** the call came from outside its allowed networks: Anis gives both the same answer on purpose (see [Routes and permissions](routes-and-permissions.md#before-a-call-is-looked-at)) |
 | `source_ip_not_allowed` | 403 | `AuthorizationException` | OrderNotPlaced | Anis's own edge refused the address outright; ask Anis |
 | `invalid_credentials` | 401 | `InvalidCredentialsException` | OrderNotPlaced | Key id, key or clock — see [Getting started](getting-started.md#when-a-signature-will-not-verify) |
 | `replay_detected` | 409 | `ReplayDetectedException` | OrderOutcomeUnknown | The same signed bytes arrived twice (a proxy or retry resent them). The copy that arrived first was admitted and may have bought the cards: **resume with the same id**, never a new one |
+| `rate_limited` | 429 | `RateLimitedException` | OrderOutcomeUnknown | Wait for `RetryAfter` (or back off), then **resume with the same id**. A first-attempt rate limit placed nothing, but the SDK cannot tell it from a resend of an attempt that is still selling, so never a new id |
 | `dependency_unavailable`, `request_timeout`, `internal_error` | 503 / 504 / 500 | `DependencyUnavailableException` | OrderOutcomeUnknown | **Resume with the same id.** Never a new id |
 
 A timeout is never `failed`. Only a definitive owner business refusal is `failed`, and a completed order
