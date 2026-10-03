@@ -122,7 +122,6 @@ public sealed class EnrollmentTests
                 PublicJwk = AnisEnrollmentClient.PublicJwkOf(partnerKey),
                 NotBefore = Now,
                 ExpiresAt = Now.AddYears(1),
-                Cidrs = ["203.0.113.0/24"],
             },
             TestContext.Current.CancellationToken);
 
@@ -151,6 +150,8 @@ public sealed class EnrollmentTests
 
         // The key submission carried the PUBLIC half only.
         Assert.DoesNotContain("\"d\"", Encoding.UTF8.GetString(stub.RequestBodies[0]!), StringComparison.Ordinal);
+        // Networks are agreed with Anis staff, never proposed with the key.
+        Assert.DoesNotContain("\"cidrs\"", Encoding.UTF8.GetString(stub.RequestBodies[0]!), StringComparison.Ordinal);
 
         // The token is a secret: on no span, log or metric.
         Assert.NotEmpty(capture.Spans);
@@ -212,6 +213,28 @@ public sealed class EnrollmentTests
         Assert.Equal($"/v1/enrollments/{Invitation:D}", stub.LastRequest.RequestUri!.AbsolutePath);
         Assert.False(stub.LastRequest!.Headers.Contains("Signature"));
         Assert.False(stub.LastRequest.Headers.Contains("Signature-Input"));
+    }
+
+    [Fact]
+    public async Task The_status_read_carries_the_key_end_date_and_tolerates_its_absence()
+    {
+        using var responseKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var stub = new SignedResponseStub(responseKey, ResponseKeyId)
+        {
+            SignedAt = Now,
+            NoStore = true,
+            Body = $$"""{"keyId":"{{Invitation:D}}","state":"active","approvalState":"approved","keyExpiresAt":"2027-09-30T12:00:00+00:00"}""",
+        };
+
+        using var enrollment = AnisEnrollmentClient.Create(
+            new Uri("https://partners.anis.ly"), Invitation, Token, KeysFor(responseKey), stub, new FixedClock(Now));
+
+        var active = await enrollment.GetStatusAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(new DateTimeOffset(2027, 9, 30, 12, 0, 0, TimeSpan.Zero), active.KeyExpiresAt);
+
+        stub.Body = $$"""{"keyId":"{{Invitation:D}}","state":"active","approvalState":"approved"}""";
+        var withoutEndDate = await enrollment.GetStatusAsync(TestContext.Current.CancellationToken);
+        Assert.Null(withoutEndDate.KeyExpiresAt);
     }
 
     private static EnrollmentKeyResult Submitted() => new()

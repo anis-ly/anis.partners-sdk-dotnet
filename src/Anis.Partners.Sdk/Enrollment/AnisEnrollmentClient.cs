@@ -119,8 +119,9 @@ public sealed class AnisEnrollmentClient : IDisposable
     /// <remarks>
     /// <c>state</c> is <c>pendingProof</c> until possession is proved, then <c>pendingApproval</c> until Anis
     /// staff record the key's fingerprint and confirm it, then <c>active</c>: from that moment the key signs
-    /// requests. <c>unavailable</c> means the key left enrollment (revoked, expired or replaced) — ask Anis
-    /// for a new invitation.
+    /// requests. <c>unavailable</c> means the key is being replaced by a newer one. Once a key has ended
+    /// (revoked, retired or past its end date) the read is refused with <c>resource_not_found</c>, like an
+    /// unknown invitation.
     /// </remarks>
     public Task<EnrollmentStatus> GetStatusAsync(CancellationToken cancellationToken = default)
         => _transport.SendEnrollmentAsync<EnrollmentStatus>(HttpMethod.Get, "/v1/enrollments/{invitationId}/status", $"v1/enrollments/{_invitationId:D}/status", null, cancellationToken);

@@ -17,6 +17,9 @@ internal sealed class OrderOperations(
     private const string IdempotencyReplayedHeader = "Idempotency-Replayed";
     // How long to wait before a resume when Anis named no Retry-After.
     private static readonly TimeSpan DefaultResumeDelay = TimeSpan.FromSeconds(5);
+    // How long to wait before resuming an order refused at the door: restoring access or fixing how the request
+    // is signed takes a person, so resuming every few seconds only repeats the refusal.
+    private static readonly TimeSpan DoorRefusalResumeDelay = TimeSpan.FromSeconds(60);
 
     private readonly ILogger _logger = logger ?? NullLogger<OrderOperations>.Instance;
 
@@ -119,7 +122,11 @@ internal sealed class OrderOperations(
         if (refusal.OrderOutcome is OrderRefusalOutcome.NotPlaced && (refusal.IsReplayed || !resuming))
             return new OrderNotPlaced(operationId, refusal);
 
-        return Unknown(operationId, refusal.RawCode ?? "refused", refusal, refusal.RetryAfter);
+        return Unknown(
+            operationId,
+            refusal.RawCode ?? "refused",
+            refusal,
+            refusal.RetryAfter ?? (OrderRefusals.RefusedAtTheDoor(refusal.Code) ? DoorRefusalResumeDelay : null));
     }
 
     private OrderOutcomeUnknown Unknown(Guid operationId, string reason, Exception cause, TimeSpan? suggestedDelay)
@@ -153,13 +160,17 @@ internal sealed class OrderOperations(
         Log.OrderOutcomeUnknown(_logger, operationId, reason);
     }
 
-    // The gateway refuses a total that is not unit times quantity, computed without floating point. Doing
-    // the check here turns a 422 round trip into an exception at the call site, where the arithmetic that
-    // produced it is still visible.
+    // The gateway refuses a total that is not unit times quantity, computed without floating point, and a price that
+    // is not positive. Doing the checks here turns a 422 round trip into an exception at the call site, where the
+    // arithmetic that produced it is still visible.
     private static void Guard(CreateOrderRequest order)
     {
         if (order.Quantity < 1)
             throw new ArgumentOutOfRangeException(nameof(order), order.Quantity, "An order must be for at least one card.");
+
+        // Compared on the wire form, so an amount that rounds to 0.000 at scale three is refused too.
+        if (order.ExpectedUnitPrice.Amount <= 0 || order.ExpectedUnitPrice.ToWireAmount() == "0.000")
+            throw new ArgumentOutOfRangeException(nameof(order), order.ExpectedUnitPrice.Amount, "ExpectedUnitPrice must be greater than zero.");
 
         var expected = order.ExpectedUnitPrice.Multiply(order.Quantity);
 

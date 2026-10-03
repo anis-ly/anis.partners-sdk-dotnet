@@ -12,14 +12,21 @@
       "publicCode": "signature_expired",
       "httpStatus": 401,
       "retryable": true,
-      "retryGuidance": "Create a new signature with current timestamps; do not reuse the expired signature.",
+      "retryGuidance": "Reserved: the current API never sends this code. A signature outside its validity window is answered invalid_credentials (401); sign again with current timestamps.",
       "publicDocumentation": true
     },
     {
       "publicCode": "invalid_content_digest",
       "httpStatus": 400,
       "retryable": false,
-      "retryGuidance": "Recompute Content-Digest over the exact transmitted body bytes and sign the corrected request.",
+      "retryGuidance": "Reserved: the current API never sends this code. A Content-Digest that does not match the body is answered malformed_signed_request (400).",
+      "publicDocumentation": true
+    },
+    {
+      "publicCode": "malformed_signed_request",
+      "httpStatus": 400,
+      "retryable": false,
+      "retryGuidance": "Rebuild how the request is signed: send both Signature and Signature-Input, cover the required components in the documented order, send every header the route requires, and compute Content-Digest over the exact body bytes. Repeating the same request unchanged fails the same way.",
       "publicDocumentation": true
     },
     {
@@ -33,14 +40,14 @@
       "publicCode": "source_ip_not_allowed",
       "httpStatus": 403,
       "retryable": false,
-      "retryGuidance": "Use an approved source address or complete an approved CIDR policy change.",
+      "retryGuidance": "Anis network protection blocked this source address. Contact Anis support with the address if it should be allowed.",
       "publicDocumentation": true
     },
     {
       "publicCode": "insufficient_scope",
       "httpStatus": 403,
       "retryable": false,
-      "retryGuidance": "Request the required scope through the approved staff process.",
+      "retryGuidance": "The application is not permitted to make this call: check that it holds the permission the call needs and that you call from a network agreed with Anis, then ask Anis staff to change either.",
       "publicDocumentation": true
     },
     {
@@ -75,7 +82,7 @@
       "publicCode": "validation_failed",
       "httpStatus": 422,
       "retryable": false,
-      "retryGuidance": "Correct every reported validation error before retrying.",
+      "retryGuidance": "The response never names the field: check the request against the documented rules before sending it again. How the request is sent counts too: a body over 64 KB, a chunked body (send Content-Length instead), headers over 32 KB in total, a path and query over 2,048 characters, a body on a call that takes none, or an order whose Idempotency-Key is missing or is not a UUID written with hyphens.",
       "publicDocumentation": true
     },
     {
@@ -89,7 +96,7 @@
       "publicCode": "operation_processing",
       "httpStatus": 202,
       "retryable": true,
-      "retryGuidance": "Poll the signed Location URI or repeat the identical signed POST after the stated delay.",
+      "retryGuidance": "Not an error: the order was accepted and is still being processed. Wait for the Retry-After delay, then repeat the identical POST with the same Idempotency-Key.",
       "publicDocumentation": true
     },
     {
@@ -236,7 +243,7 @@
       "publicCode": "key_duplicate",
       "httpStatus": 409,
       "retryable": false,
-      "retryGuidance": "Use a newly generated key pair; the submitted public key is already registered.",
+      "retryGuidance": "This invitation already took a key, so a newly generated key pair is refused too. Read the enrolment status first; to enrol a different key, ask Anis staff to restart the enrolment.",
       "publicDocumentation": true
     },
     {

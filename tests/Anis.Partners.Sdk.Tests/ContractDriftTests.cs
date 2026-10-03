@@ -78,6 +78,56 @@ public sealed class ContractDriftTests
     }
 
     [Fact]
+    public void A_released_error_code_keeps_its_number()
+    {
+        // A partner's compiled switch holds these numbers. 1-36 shipped in 1.0.0; a new code only ever appends.
+        var released = new Dictionary<PartnerErrorCode, int>
+        {
+            [PartnerErrorCode.Unknown] = 0,
+            [PartnerErrorCode.AccountInactive] = 1,
+            [PartnerErrorCode.AllowedDebtConsentRequired] = 2,
+            [PartnerErrorCode.BindingNotAuthorized] = 3,
+            [PartnerErrorCode.BusinessSubscriptionRequired] = 4,
+            [PartnerErrorCode.CardNotFound] = 5,
+            [PartnerErrorCode.CardUnavailable] = 6,
+            [PartnerErrorCode.ChallengeExpired] = 7,
+            [PartnerErrorCode.CurrencyNotSupported] = 8,
+            [PartnerErrorCode.DailyLimitExceeded] = 9,
+            [PartnerErrorCode.DependencyUnavailable] = 10,
+            [PartnerErrorCode.IdempotencyConflict] = 11,
+            [PartnerErrorCode.InsufficientBalance] = 12,
+            [PartnerErrorCode.InsufficientScope] = 13,
+            [PartnerErrorCode.InternalError] = 14,
+            [PartnerErrorCode.InvalidContentDigest] = 15,
+            [PartnerErrorCode.InvalidCredentials] = 16,
+            [PartnerErrorCode.InvitationInvalid] = 17,
+            [PartnerErrorCode.InvoiceRevealLimitExceeded] = 18,
+            [PartnerErrorCode.KeyDuplicate] = 19,
+            [PartnerErrorCode.KeyProofInvalid] = 20,
+            [PartnerErrorCode.OperationProcessing] = 21,
+            [PartnerErrorCode.OwnerLimitExceeded] = 22,
+            [PartnerErrorCode.PriceChanged] = 23,
+            [PartnerErrorCode.PurchaseNotAllowed] = 24,
+            [PartnerErrorCode.QuantityUnavailable] = 25,
+            [PartnerErrorCode.RateLimited] = 26,
+            [PartnerErrorCode.ReplayDetected] = 27,
+            [PartnerErrorCode.RequestTimeout] = 28,
+            [PartnerErrorCode.ResourceNotFound] = 29,
+            [PartnerErrorCode.RevealNotAllowed] = 30,
+            [PartnerErrorCode.SignatureExpired] = 31,
+            [PartnerErrorCode.SourceIpNotAllowed] = 32,
+            [PartnerErrorCode.ValidationFailed] = 33,
+            [PartnerErrorCode.WalletDisabled] = 34,
+            [PartnerErrorCode.WalletExpired] = 35,
+            [PartnerErrorCode.WalletNotGranted] = 36,
+            [PartnerErrorCode.MalformedSignedRequest] = 37,
+        };
+
+        Assert.All(released, pair => Assert.Equal(pair.Value, (int)pair.Key));
+        Assert.Equal(released.Count, Enum.GetValues<PartnerErrorCode>().Length);
+    }
+
+    [Fact]
     public void The_covered_component_profiles_match_the_contracts_description()
     {
         // The contract states the three orders; the corpus proves the bytes. This guards the one thing a

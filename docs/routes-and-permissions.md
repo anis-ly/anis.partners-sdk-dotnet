@@ -40,7 +40,8 @@ The order in which they run is not part of the contract — do not branch on whi
 | Check | Refusal |
 |---|---|
 | the request's shape and body (including a body where none is allowed) | `validation_failed` 422 |
-| the key exists, is active and signed this request; the digest describes the body; the signature is fresh | `invalid_credentials` 401 |
+| the signature headers are present and well formed, sign the parts this route needs in its order, and the digest describes the body | `malformed_signed_request` 400 |
+| the key exists, is active and signed this request; the signature is fresh | `invalid_credentials` 401 |
 | the nonce was not seen before | `replay_detected` 409 |
 | a staff-set limit, or the gateway's own protection | `rate_limited` 429 |
 | the caller's address is inside the application's allowed networks | `insufficient_scope` 403 |
@@ -48,10 +49,14 @@ The order in which they run is not part of the contract — do not branch on whi
 | the wallet in the path is granted to the application | `wallet_not_granted` 404 |
 
 An address outside the allowed networks and a missing permission are deliberately the same
-`insufficient_scope`, and a revoked key, an unknown key, a bad signature, a digest that does not describe the body and a stale signature are deliberately the same
+`insufficient_scope`, and a revoked key, an unknown key, a bad signature and a stale signature are deliberately the same
 `invalid_credentials`: a refusal never tells a caller which condition to work around. Run the
-signature self-check: if it succeeds, the key is fine and the failing call was signed over something the
-gateway saw differently (it reports what it saw); if it fails too, the key itself is not usable.
+signature self-check: if it succeeds, the key, the clock and the address are fine and the failing call was signed
+over something the gateway saw differently (it reports what it saw). If it fails with `invalid_credentials`, the
+cause is the key (wrong id, wrong key file, not yet active, revoked, replaced or past its end date), the host clock,
+or the address — it must be the address Anis gave you, not rewritten by a proxy. If it fails with
+`insufficient_scope`, the call comes from a network not agreed with Anis or the application lacks
+`diagnostics:use`.
 
 ## Paging
 

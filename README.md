@@ -77,6 +77,9 @@ var outcome = await anis.Orders.CreateAsync(walletId, operationId, request, ct);
 
 switch (outcome)
 {
+    case OrderCompleted { CodesWithheld: true } w:
+        await support.ReportWithheldAsync(operationId, ct); // paid, but no codes released: never buy it again
+        break;
     case OrderCompleted c:
         await vault.StoreAsync(c.Credentials, ct); // paid; codes here, ONCE — store them first
         break;
@@ -111,7 +114,7 @@ one up, a dropped response plus an ordinary retry would mint a second key and bu
 *first* reports completion carries the credentials — and the SDK returns any response that carries them as
 `OrderCompleted`, so they can never be hidden behind the "already delivered" case.
 
-**Every order outcome tells you the next safe action.** `OrderNotPlaced` means nothing was bought (a new attempt takes a new id); `OrderOutcomeUnknown` means resume the same id; `OrderProcessing` also needs a resume. On a resume, a refusal that is not the order's recorded answer comes back as `OrderOutcomeUnknown`, because it says nothing about the earlier attempt.
+**Every order outcome tells you the next safe action.** `OrderNotPlaced` means nothing was bought (a new attempt takes a new id); `OrderOutcomeUnknown` means resume the same id; `OrderProcessing` also needs a resume. On a resume, a refusal that is not the order's recorded answer comes back as `OrderOutcomeUnknown`, because it says nothing about the earlier attempt. So do `invalid_credentials`, `insufficient_scope` and `wallet_not_granted` on a create: restore access, then resume the same id.
 
 **Observability is on by default and leaks nothing.** One `ActivitySource` and one `Meter`, both named
 `Anis.Partners.Sdk`, plus structured logging through your own `ILoggerFactory`. Tests capture every log
@@ -126,7 +129,7 @@ unverified content.
 ## What is covered
 
 All 19 published routes, in six operation groups — `Profile`, `Wallets`, `Catalogue`, `Orders`,
-`OwnedCards`, `Diagnostics` — plus `AnisEnrollmentClient` for bootstrap. 36 public error codes, generated
+`OwnedCards`, `Diagnostics` — plus `AnisEnrollmentClient` for bootstrap. 38 public error codes, generated
 from the error catalogue, each pinned by a test to its exception type and its order outcome. The signature
 self-check (`Diagnostics`) needs `diagnostics:use` and is the right first call when a signature will not
 verify, because it reports the exact facts the gateway built its base from.

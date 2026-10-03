@@ -187,7 +187,7 @@ internal sealed class SampleCommands(IAnisPartnersClient anis, ISigningKeySource
     // ---- Enrollment -------------------------------------------------------------------------------
 
     /// <summary>Generates a key, submits its public half, proves possession, and saves the private half.</summary>
-    public static async Task EnrolAsync(AnisEnrollmentClient enrollment, string keyFile, int validityDays, IReadOnlyList<string> cidrs, CancellationToken ct)
+    public static async Task EnrolAsync(AnisEnrollmentClient enrollment, string keyFile, int validityDays, CancellationToken ct)
     {
         if (File.Exists(keyFile))
             throw new InvalidOperationException(
@@ -213,7 +213,6 @@ internal sealed class SampleCommands(IAnisPartnersClient anis, ISigningKeySource
                 PublicJwk = AnisEnrollmentClient.PublicJwkOf(key),
                 NotBefore = now,
                 ExpiresAt = now.AddDays(validityDays),
-                Cidrs = cidrs.Count > 0 ? cidrs : null,
             },
             ct);
 
@@ -281,6 +280,13 @@ internal sealed class SampleCommands(IAnisPartnersClient anis, ISigningKeySource
 
         switch (outcome)
         {
+            case OrderCompleted { CodesWithheld: true } withheld:
+                // Paid and complete, but Anis released no codes: never buy it again, and a reveal will not return them.
+                await journal.RecordOutcomeAsync(intent, "completed-codes-withheld", withheld.Credentials, ct);
+                Section($"COMPLETED, CODES WITHHELD — paid; do not buy it again. Write to support@anis.ly with operation {intent.OperationId:D}.");
+                Show(withheld.Order);
+                break;
+
             case OrderCompleted completed:
                 // The ONLY response that carries the credentials: persist them before anything else.
                 await journal.RecordOutcomeAsync(intent, "completed", completed.Credentials, ct);

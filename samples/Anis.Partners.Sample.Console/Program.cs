@@ -169,7 +169,6 @@ static async Task<int> EnrolAsync(
         enrollment,
         flags.GetValueOrDefault("key-file") ?? sample.KeyFile,
         flags.TryGetValue("days", out var days) ? int.Parse(days!, CultureInfo.InvariantCulture) : 365,
-        [.. (flags.GetValueOrDefault("cidrs") ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)],
         ct);
 
     return 0;
@@ -196,7 +195,7 @@ internal static class Refusal
         InsufficientBalanceException => "top up the wallet, then place a NEW order with a NEW operation id",
         OutOfStockException => "re-read the catalogue; place a NEW order for an available card or quantity",
         LimitExceededException => "do not poll: the owner allowance is used up; try later with a NEW operation id",
-        RateLimitedException => "wait for Retry-After, then send again (an order may keep its operation id)",
+        RateLimitedException => "wait for Retry-After, then send again (an order: RESUME the same operation id, never a new one)",
         IdempotencyConflictException => "this operation id belongs to a different order; use a new id",
         DependencyUnavailableException => "a read: retry shortly. An order: resume the SAME operation id",
         AuthorizationException => "needs a change on Anis's side (scope, allowed network, account or wallet state)",
@@ -218,7 +217,7 @@ internal static class Arguments
     public const string Usage = """
         Anis Partner SDK sample — one command per thing a partner does.
 
-          enrol --invitation <id> --token <token> [--key-file <path>] [--days 365] [--cidrs a/b,c/d]
+          enrol --invitation <id> --token <token> [--key-file <path>] [--days 365]
           enrol-status --invitation <id> --token <token>
 
           tour                                        every read route once, following real ids
