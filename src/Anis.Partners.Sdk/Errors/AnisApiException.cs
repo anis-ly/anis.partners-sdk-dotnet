@@ -8,7 +8,7 @@ namespace Anis.Partners.Sdk.Errors;
 /// <summary>An error the Anis Partner API returned, as an RFC 9457 problem.</summary>
 /// <remarks>
 /// One base type carrying the machine contract, plus a small set of subclasses for the refusals a caller
-/// actually branches on. Not thirty-six exception types: the .NET convention for client libraries is a
+/// actually branches on. Not one exception type per code: the .NET convention for client libraries is a
 /// single exception with a code, with types reserved for the cases that get their own handling — and a
 /// type per code would mean a `catch` list nobody maintains.
 ///
@@ -105,8 +105,9 @@ public enum OrderRefusalOutcome
 {
     /// <summary>
     /// Nothing was bought and nothing was charged. Fix the cause (see the code), then place the order again
-    /// under a NEW operation id. A rate limit is not in this group: it leaves the order open, see
-    /// <see cref="Unknown"/>. On a resume, a fresh (not replayed) refusal returns
+    /// under a NEW operation id. A rate limit and a refusal of the caller's access (<c>invalid_credentials</c> and
+    /// the reserved <c>signature_expired</c>, <c>insufficient_scope</c>, <c>wallet_not_granted</c>) and a badly built signed request (<c>malformed_signed_request</c>) are not in this
+    /// group: they leave the order open, see <see cref="Unknown"/>. On a resume, a fresh (not replayed) refusal returns
     /// <see cref="OrderOutcomeUnknown"/> instead, because the earlier attempt may have completed.
     /// </summary>
     NotPlaced = 1,
@@ -174,6 +175,7 @@ public sealed class LimitExceededException(Problem problem, HttpStatusCode statu
 /// indistinguishable. If a signature will not verify, the signature diagnostic route reports exactly what the
 /// gateway saw; a host clock that is badly wrong is a common cause. <c>signature_expired</c> is in the catalogue
 /// and maps here too, but Anis does not send it today.
+/// On an order this comes back as <see cref="OrderOutcomeUnknown"/>: restore access, then resume the same id.
 /// </remarks>
 public sealed class InvalidCredentialsException(Problem problem, HttpStatusCode status, TimeSpan? retryAfter = null, bool isReplayed = false)
     : AnisApiException(problem, status, retryAfter, isReplayed);
@@ -197,7 +199,8 @@ public sealed class ReplayDetectedException(Problem problem, HttpStatusCode stat
 /// <c>account_inactive</c>, <c>business_subscription_required</c>, <c>wallet_disabled</c>,
 /// <c>wallet_expired</c>), or an owner business rule (<c>purchase_not_allowed</c>, <c>reveal_not_allowed</c>).
 /// None of these change by retrying; they need a change on Anis's or the account owner's side. On an order,
-/// nothing was placed.
+/// <c>insufficient_scope</c> comes back as <see cref="OrderOutcomeUnknown"/> (restore access, then resume the same id);
+/// the others close the order and nothing was placed.
 /// </remarks>
 public sealed class AuthorizationException(Problem problem, HttpStatusCode status, TimeSpan? retryAfter = null, bool isReplayed = false)
     : AnisApiException(problem, status, retryAfter, isReplayed);
@@ -206,6 +209,8 @@ public sealed class AuthorizationException(Problem problem, HttpStatusCode statu
 /// <remarks>
 /// Includes <c>wallet_not_granted</c>: the wallet is not granted to this application, which is reported
 /// exactly like a wallet that does not exist.
+/// On an order, <c>wallet_not_granted</c> comes back as <see cref="OrderOutcomeUnknown"/>: staff may have removed the
+/// wallet from the application while an earlier attempt was selling. Restore the grant, then resume the same id.
 /// </remarks>
 public sealed class ResourceNotFoundException(Problem problem, HttpStatusCode status, TimeSpan? retryAfter = null, bool isReplayed = false)
     : AnisApiException(problem, status, retryAfter, isReplayed);
@@ -230,12 +235,13 @@ public sealed class DependencyUnavailableException(Problem problem, HttpStatusCo
 
 /// <summary>An enrollment step was refused.</summary>
 /// <remarks>
-/// <c>invitation_invalid</c> (unknown, used or expired invitation or token — ask Anis for a new invitation),
+/// <c>invitation_invalid</c> (unknown, used or expired invitation or token, or five failed proofs — ask Anis for a new invitation),
 /// <c>challenge_expired</c> (the proof names a challenge generation that is no longer current: Anis staff restarted
 /// the enrollment — enrol again with the new invitation), <c>key_proof_invalid</c> (the submitted public key is not a
-/// usable P-256 public key) and <c>key_duplicate</c> (the key is not waiting for this step — usually the invitation
-/// has already taken a key, for instance when a submission is sent again after its answer was lost; ask Anis staff
-/// to restart the enrollment). A proof that does not verify is not a refusal: it comes back with
+/// usable P-256 public key) and <c>key_duplicate</c> (the key is not waiting for this step — the invitation has
+/// already taken a key, for instance when a submission is sent again after its answer was lost, or the proof was
+/// already accepted and was sent again: read the status first; otherwise ask Anis staff to restart the enrollment).
+/// A proof that does not verify is not a refusal: it comes back with
 /// <c>ProofState</c> <c>"failed"</c>.
 /// </remarks>
 public sealed class EnrollmentRefusedException(Problem problem, HttpStatusCode status, TimeSpan? retryAfter = null, bool isReplayed = false)
@@ -254,7 +260,14 @@ public sealed class EnrollmentRefusedException(Problem problem, HttpStatusCode s
 /// a first attempt: a host retry handler may have resent a create whose first attempt is still selling, or a
 /// create may reuse an id whose earlier attempt timed out. A first-attempt rate limit placed nothing, but the
 /// SDK cannot tell the two apart, so the answer is to resume with the same id (a rate limit is transient
-/// anyway). The other admission refusals stay final. The catalogue says the same: keep the idempotency key
+/// anyway).
+/// <c>invalid_credentials</c> (and the reserved <c>signature_expired</c>), <c>insufficient_scope</c> and
+/// <c>wallet_not_granted</c> are open for the same reason: each is decided before the order is looked up, and
+/// staff can withdraw a key, a permission or a wallet grant while an earlier attempt with the same id is selling
+/// or has sold. Resuming once access is restored returns the recorded outcome; a new id could buy the cards twice.
+/// <c>malformed_signed_request</c> is open too: the SDK builds every signature itself, so the refusal means
+/// something rewrote the request on its way, and if that was a resend the earlier attempt may have sold.
+/// The other admission refusals stay final. The catalogue says the same: keep the idempotency key
 /// for the same intent. A code this SDK version does not know is treated as open, because resuming is always
 /// safe and a new id is not.
 /// </remarks>
@@ -269,8 +282,18 @@ internal static class OrderRefusals
             or PartnerErrorCode.ReplayDetected
             or PartnerErrorCode.RateLimited
             or PartnerErrorCode.Unknown => OrderRefusalOutcome.Unknown,
+        _ when RefusedAtTheDoor(code) => OrderRefusalOutcome.Unknown,
         _ => OrderRefusalOutcome.NotPlaced,
     };
+
+    /// <summary>
+    /// A refusal decided before the order is looked up that only a person can clear: the caller's access (the key,
+    /// a permission, the wallet grant) or how the request is signed.
+    /// </summary>
+    public static bool RefusedAtTheDoor(PartnerErrorCode code)
+        => code is PartnerErrorCode.InvalidCredentials or PartnerErrorCode.SignatureExpired
+            or PartnerErrorCode.InsufficientScope or PartnerErrorCode.WalletNotGranted
+            or PartnerErrorCode.MalformedSignedRequest;
 }
 
 /// <summary>Builds the right exception for a refusal.</summary>

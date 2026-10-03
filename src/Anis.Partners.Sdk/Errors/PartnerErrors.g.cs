@@ -53,13 +53,13 @@ public enum PartnerErrorCode
     /// <summary>HTTP 409. Submit a new operation only after the authoritative balance or allowed-debt state changes.</summary>
     InsufficientBalance = 12,
 
-    /// <summary>HTTP 403. Request the required scope through the approved staff process.</summary>
+    /// <summary>HTTP 403. The application is not permitted to make this call: check that it holds the permission the call needs and that you call from a network agreed with Anis, then ask Anis staff to change either.</summary>
     InsufficientScope = 13,
 
     /// <summary>HTTP 500, retryable. Preserve the same accepted operation and idempotency key; retry only after bounded backoff or platform remediation.</summary>
     InternalError = 14,
 
-    /// <summary>HTTP 400. Recompute Content-Digest over the exact transmitted body bytes and sign the corrected request.</summary>
+    /// <summary>HTTP 400. Reserved: the current API never sends this code. A Content-Digest that does not match the body is answered malformed_signed_request (400).</summary>
     InvalidContentDigest = 15,
 
     /// <summary>HTTP 401. Correct the signing credentials or profile before retrying; key and application state details are intentionally indistinguishable.</summary>
@@ -71,13 +71,16 @@ public enum PartnerErrorCode
     /// <summary>HTTP 409. Use individual reveal for selected cards; invoice reveal is capped at 100.</summary>
     InvoiceRevealLimitExceeded = 18,
 
-    /// <summary>HTTP 409. Use a newly generated key pair; the submitted public key is already registered.</summary>
+    /// <summary>HTTP 409. This invitation already took a key, so a newly generated key pair is refused too. Read the enrolment status first; to enrol a different key, ask Anis staff to restart the enrolment.</summary>
     KeyDuplicate = 19,
 
     /// <summary>HTTP 422. Correct the P-256/P1363 proof for the active challenge generation.</summary>
     KeyProofInvalid = 20,
 
-    /// <summary>HTTP 202, retryable. Poll the signed Location URI or repeat the identical signed POST after the stated delay.</summary>
+    /// <summary>HTTP 400. Rebuild how the request is signed: send both Signature and Signature-Input, cover the required components in the documented order, send every header the route requires, and compute Content-Digest over the exact body bytes. Repeating the same request unchanged fails the same way.</summary>
+    MalformedSignedRequest = 37,
+
+    /// <summary>HTTP 202, retryable. Not an error: the order was accepted and is still being processed. Wait for the Retry-After delay, then repeat the identical POST with the same Idempotency-Key.</summary>
     OperationProcessing = 21,
 
     /// <summary>HTTP 409. Do not poll; submit a new operation and idempotency key only after the owner allowance is known to have changed.</summary>
@@ -107,13 +110,13 @@ public enum PartnerErrorCode
     /// <summary>HTTP 409. The card-level reveal predicate refused disclosure; do not retry until the card state is known to have changed.</summary>
     RevealNotAllowed = 30,
 
-    /// <summary>HTTP 401, retryable. Create a new signature with current timestamps; do not reuse the expired signature.</summary>
+    /// <summary>HTTP 401, retryable. Reserved: the current API never sends this code. A signature outside its validity window is answered invalid_credentials (401); sign again with current timestamps.</summary>
     SignatureExpired = 31,
 
-    /// <summary>HTTP 403. Use an approved source address or complete an approved CIDR policy change.</summary>
+    /// <summary>HTTP 403. Anis network protection blocked this source address. Contact Anis support with the address if it should be allowed.</summary>
     SourceIpNotAllowed = 32,
 
-    /// <summary>HTTP 422. Correct every reported validation error before retrying.</summary>
+    /// <summary>HTTP 422. The response never names the field: check the request against the documented rules before sending it again. How the request is sent counts too: a body over 64 KB, a chunked body (send Content-Length instead), headers over 32 KB in total, a path and query over 2,048 characters, a body on a call that takes none, or an order whose Idempotency-Key is missing or is not a UUID written with hyphens.</summary>
     ValidationFailed = 33,
 
     /// <summary>HTTP 409. Submit a new request only after the wallet has been re-enabled.</summary>
@@ -151,6 +154,7 @@ public static class PartnerErrorCodes
         ["invoice_reveal_limit_exceeded"] = PartnerErrorCode.InvoiceRevealLimitExceeded,
         ["key_duplicate"] = PartnerErrorCode.KeyDuplicate,
         ["key_proof_invalid"] = PartnerErrorCode.KeyProofInvalid,
+        ["malformed_signed_request"] = PartnerErrorCode.MalformedSignedRequest,
         ["operation_processing"] = PartnerErrorCode.OperationProcessing,
         ["owner_limit_exceeded"] = PartnerErrorCode.OwnerLimitExceeded,
         ["price_changed"] = PartnerErrorCode.PriceChanged,

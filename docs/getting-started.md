@@ -25,7 +25,6 @@ var submitted = await enrollment.SubmitKeyAsync(new EnrollmentKeyRequest
     PublicJwk = AnisEnrollmentClient.PublicJwkOf(key),   // public members only; a `d` is refused
     NotBefore = DateTimeOffset.UtcNow,
     ExpiresAt = DateTimeOffset.UtcNow.AddYears(1),
-    Cidrs     = ["203.0.113.0/24"],                      // the networks you will call from — a proposal
 }, ct);
 
 var status = await enrollment.ProveAsync(submitted, key, ct);
@@ -45,7 +44,10 @@ Once `ProofState` is `accepted`, wait for staff to confirm. `GetStatusAsync` rep
 | `pendingProof` | submitted; possession not yet proved |
 | `pendingApproval` | proved; waiting for Anis staff to record the fingerprint and confirm the key |
 | `active` | confirmed — the key signs requests |
-| `unavailable` | the key left enrollment (revoked, expired or replaced); ask for a new invitation |
+| `unavailable` | the key is being replaced by a newer one; once a key has ended (revoked, retired or past its end date) this read is refused with `resource_not_found` |
+
+Once the key is `active`, `KeyExpiresAt` is the date it stops working. Ask Anis staff for a replacement weeks before
+it: past it, every call is refused with `invalid_credentials`, including reveals of cards you already bought.
 
 **The proof is not a signature over the challenge.** Anis keeps only a hash of the challenge, so the proof
 signs a message built from values both sides hold. `ProveAsync` does it for you; if your key lives in a vault
@@ -56,16 +58,15 @@ What Anis may refuse, as `EnrollmentRefusedException`:
 
 | Code | Meaning |
 |---|---|
-| `invitation_invalid` | unknown, used or expired invitation or token; ask Anis for a new invitation |
+| `invitation_invalid` | unknown, used or expired invitation or token, or five failed proofs; ask Anis for a new invitation |
 | `challenge_expired` | the proof was built on a challenge generation that is no longer current: Anis staff restarted this enrollment after you received the challenge. Enrol again with the new invitation token staff send you |
 | `key_proof_invalid` | the public key you submitted is not a usable P-256 public key — malformed, of another type or curve, or carrying a private member. Submit the public half exactly as `AnisEnrollmentClient.PublicJwkOf` builds it |
-| `key_duplicate` | the key is not waiting for this step — usually this invitation has already taken a key (a submission sent again after its answer was lost), or a proof arrived for a key that no longer waits for one. Ask Anis staff to restart the enrollment |
+| `key_duplicate` | the key is not waiting for this step — usually this invitation has already taken a key (a submission sent again after its answer was lost), or a proof arrived for a key that no longer waits for one. Ask Anis staff to restart the enrollment; on the proof, it means the proof was already accepted and was sent again — read the status (`GetStatusAsync`) first |
 
 **A proof that fails is not a refusal.** When the signature does not verify, or the proof arrives after the
 challenge expired, `ProveAsync` answers normally with `ProofState` `"failed"` and the key keeps waiting for a proof.
 Check `ProofState` before you contact staff. Fix the proof (the right key, `ProofMessage` unchanged, a 64-byte
-P1363 signature) and send it again; after too many failed proofs the next one is refused with `rate_limited`
-until Anis staff restart the enrollment. A challenge that expired cannot be proved at all — ask for a restart.
+P1363 signature) and send it again — but more than about 30 minutes after the key submission a proof can no longer succeed: do not prove again, ask Anis staff to restart the enrollment. After five failed proofs the next one is refused with `invitation_invalid`.
 
 The enrollment token carries at least 256 bits of entropy and is stored by Anis only as a SHA-256 and never
 logged — the SDK does not log it either. Treat it the same way. Two clocks run during enrollment:
@@ -82,11 +83,11 @@ taken: ask Anis staff to restart the enrollment, which gives you a new invitatio
 (Do not rely on `GetAsync` here: it reads a copy of the enrollment that can trail the live state by a few
 moments.)
 
-The validity window you ask for is used for its **length** only: Anis starts it when the key is committed.
-The networks you propose are confirmed by staff. A request from any other address is refused with
-`403 insufficient_scope` — the same answer as a missing permission, on purpose, so the refusal never tells a
-caller whether its address or its grant is the thing to work around. If a call that should be permitted is
-refused that way, check both with Anis.
+The validity window you ask for is used for its **length** only: Anis keeps the shorter of it and the validity Anis
+staff set (never more than two years), and starts it when the key is committed. Tell Anis staff the networks you will
+call from when you ask for access. A request from any other address is refused with `403 insufficient_scope` — the
+same answer as a missing permission, on purpose, so the refusal never tells a caller whether its address or its grant
+is the thing to work around. If a call that should be permitted is refused that way, check both with Anis.
 
 ## 2. Register the client
 
@@ -198,7 +199,19 @@ Console.WriteLine(string.Join(" ", diagnostic.CoveredComponents));
 Console.WriteLine(diagnostic.KeyId);             // the key it resolved
 ```
 
-Compare each line with what you signed. It is almost always the query or the authority. It needs
-`diagnostics:use`. If even the self-check answers `401 invalid_credentials`, the key itself is the problem:
-the wrong key id, a key file that does not match it, a key not yet active or revoked, or a clock more than a
-minute out.
+Then follow what the self-check answers. It needs `diagnostics:use`.
+
+- **It succeeds.** Your key and clock are fine. Compare each line with what the failing call signed — it is almost
+  always the query or the authority (which must be the address Anis gave you), or a body changed after it was
+  digested.
+- **`invalid_credentials`.** The key cannot be used here: the wrong key id, a key file that does not match it, a key
+  not yet active, revoked, replaced after its overlap ended or past its end date (`EnrollmentStatus.KeyExpiresAt`), a
+  host clock more than about 30 seconds fast or 60 seconds slow, or the wrong address — the base URL must be the one
+  Anis gave you, and a proxy must not rewrite the host. Check the address before you ask for a new key.
+- **`malformed_signed_request`.** The request was rewritten on its way to Anis — usually a proxy that changes headers
+  or the body. The SDK builds the signature itself.
+- **`insufficient_scope`.** The call came from outside your agreed networks, or the application lacks
+  `diagnostics:use`.
+
+If nothing changed on your side and the self-check fails too, your access may be paused: write to support@anis.ly with
+the request id.

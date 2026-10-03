@@ -39,6 +39,7 @@ public sealed class OrderOutcomeTests
         var completed = Assert.IsType<OrderCompleted>(result);
 
         Assert.Single(completed.Credentials);
+        Assert.False(completed.CodesWithheld);
         Assert.Equal("1234", completed.Credentials[0].Voucher);
     }
 
@@ -60,6 +61,7 @@ public sealed class OrderOutcomeTests
         var completed = Assert.IsType<OrderCompleted>(result);
 
         Assert.Empty(completed.Credentials);
+        Assert.True(completed.CodesWithheld);
     }
 
     [Fact]
@@ -254,6 +256,99 @@ public sealed class OrderOutcomeTests
         var unknown = Assert.IsType<OrderOutcomeUnknown>(result);
         Assert.Equal(TimeSpan.FromSeconds(30), unknown.SuggestedDelay);
         Assert.IsType<RateLimitedException>(unknown.Cause);
+    }
+
+    [Theory]
+    [InlineData("invalid_credentials", 401, typeof(InvalidCredentialsException))]
+    [InlineData("signature_expired", 401, typeof(InvalidCredentialsException))]
+    [InlineData("insufficient_scope", 403, typeof(AuthorizationException))]
+    [InlineData("wallet_not_granted", 404, typeof(ResourceNotFoundException))]
+    [InlineData("malformed_signed_request", 400, typeof(AnisApiException))]
+    public async Task A_refusal_at_the_door_on_create_leaves_the_order_open_and_suggests_a_minute(string code, int status, Type refusalType)
+    {
+        using var fixture = new PipelineFixture();
+        fixture.Stub.Status = (HttpStatusCode)status;
+        fixture.Stub.Body = $$"""{"type":"about:blank","title":"t","status":{{status}},"code":"{{code}}"}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        var unknown = Assert.IsType<OrderOutcomeUnknown>(result);
+        Assert.Equal(Operation, unknown.OperationId);
+        Assert.Equal(TimeSpan.FromSeconds(60), unknown.SuggestedDelay);
+        Assert.IsType(refusalType, unknown.Cause);
+        Assert.Equal(OrderRefusalOutcome.Unknown, ((AnisApiException)unknown.Cause).OrderOutcome);
+    }
+
+    [Theory]
+    [InlineData("invalid_credentials", 401)]
+    [InlineData("signature_expired", 401)]
+    [InlineData("insufficient_scope", 403)]
+    [InlineData("wallet_not_granted", 404)]
+    [InlineData("malformed_signed_request", 400)]
+    public async Task A_refusal_at_the_door_on_resume_suggests_a_minute(string code, int status)
+    {
+        using var fixture = new PipelineFixture();
+        fixture.Stub.Status = (HttpStatusCode)status;
+        fixture.Stub.Body = $$"""{"type":"about:blank","title":"t","status":{{status}},"code":"{{code}}"}""";
+
+        var result = await fixture.Client.Orders.ResumeAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        var unknown = Assert.IsType<OrderOutcomeUnknown>(result);
+        Assert.Equal(TimeSpan.FromSeconds(60), unknown.SuggestedDelay);
+    }
+
+    [Fact]
+    public async Task A_refusal_at_the_door_with_a_retry_after_suggests_that_wait()
+    {
+        using var fixture = new PipelineFixture();
+        fixture.Stub.Status = HttpStatusCode.Forbidden;
+        fixture.Stub.RetryAfterSeconds = 30;
+        fixture.Stub.Body = """{"type":"about:blank","title":"t","status":403,"code":"insufficient_scope"}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        Assert.Equal(TimeSpan.FromSeconds(30), Assert.IsType<OrderOutcomeUnknown>(result).SuggestedDelay);
+    }
+
+    [Theory]
+    [InlineData("invalid_credentials", 401)]
+    [InlineData("signature_expired", 401)]
+    [InlineData("insufficient_scope", 403)]
+    [InlineData("wallet_not_granted", 404)]
+    [InlineData("malformed_signed_request", 400)]
+    public async Task A_replayed_refusal_at_the_door_is_not_placed(string code, int status)
+    {
+        using var fixture = new PipelineFixture();
+        fixture.Stub.Status = (HttpStatusCode)status;
+        fixture.Stub.NoStore = true;
+        fixture.Stub.IdempotencyReplayed = true;
+        fixture.Stub.Body = $$"""{"type":"about:blank","title":"t","status":{{status}},"code":"{{code}}"}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        var notPlaced = Assert.IsType<OrderNotPlaced>(result);
+        Assert.True(notPlaced.Refusal.IsReplayed);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-5.000")]
+    [InlineData("0.0004")]
+    public async Task A_unit_price_that_is_not_positive_never_leaves_the_process(string amount)
+    {
+        using var fixture = new PipelineFixture();
+        var value = decimal.Parse(amount, System.Globalization.CultureInfo.InvariantCulture);
+        var bad = Order with
+        {
+            ExpectedUnitPrice = new Money(value, "LYD"),
+            ExpectedTotal = new Money(value * 2, "LYD"),
+        };
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => fixture.Client.Orders.CreateAsync(Wallet, Operation, bad, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => fixture.Client.Orders.ResumeAsync(Wallet, Operation, bad, TestContext.Current.CancellationToken));
+        Assert.Null(fixture.Stub.LastRequest);
     }
 
     [Fact]

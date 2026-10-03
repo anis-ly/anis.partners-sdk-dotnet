@@ -214,6 +214,25 @@ public sealed class ObservabilityTests
     }
 
     [Fact]
+    public async Task A_refusal_of_access_on_create_is_counted_unknown_and_logged()
+    {
+        using var capture = new TelemetryCapture();
+        using var fixture = new PipelineFixture(capture.Loggers);
+
+        fixture.Stub.Status = HttpStatusCode.Unauthorized;
+        fixture.Stub.NoStore = true;
+        fixture.Stub.Body = """{"type":"about:blank","title":"t","status":401,"code":"invalid_credentials"}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+        Assert.IsType<OrderOutcomeUnknown>(result);
+
+        var outcome = Assert.Single(capture.Measurements, m => m.Instrument == "anis.partners.order.outcomes");
+        Assert.Equal("unknown", outcome.Tags[AnisPartnersTelemetry.Tags.OrderOutcome]);
+        Assert.Equal("invalid_credentials", outcome.Tags[AnisPartnersTelemetry.Tags.ErrorType]);
+        Assert.Contains(capture.LogLines, line => line.StartsWith("Warning 1008", StringComparison.Ordinal) && line.Contains(Operation.ToString("D"), StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task A_failing_signer_is_named_as_such_and_is_not_an_unknown_order()
     {
         using var capture = new TelemetryCapture();

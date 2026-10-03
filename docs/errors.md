@@ -29,14 +29,13 @@ somebody improves the wording.
 | `RetryAfter` | the signed `Retry-After`, when Anis knows when to try again |
 | `IsRetryable` | whether the catalogue marks the **code** retryable |
 | `IsReplayed` | the refusal is the **recorded** answer of an earlier order with the same operation id — the order is closed: it arrives as `OrderNotPlaced` |
-| `OrderOutcome` | the refusal classification from its code and replay marker, before the create/resume rule is applied: `NotPlaced` or `Unknown`. The SDK has already applied it: the refusal arrives inside `OrderNotPlaced` or `OrderOutcomeUnknown` |
+| `OrderOutcome` | the refusal classification from its code and replay marker, before the create/resume rule is applied: `NotPlaced` or `Unknown`. `Unknown` includes the access refusals `invalid_credentials`, `insufficient_scope` and `wallet_not_granted`. The SDK has already applied it: the refusal arrives inside `OrderNotPlaced` or `OrderOutcomeUnknown` |
 
 On an order a refusal is returned, not thrown: it arrives as `OrderNotPlaced.Refusal` or as `OrderOutcomeUnknown.Cause`. On a read, Anis API refusals are thrown — see [Orders and recovery](orders-and-recovery.md#when-an-order-is-refused-was-it-placed). The typed exceptions below are the refusal types.
 
 ## The typed exceptions
 
-One base type plus a small set of subclasses for the refusals callers actually branch on — not thirty-six
-exception types, which would be a `catch` list nobody maintains.
+One base type plus a small set of subclasses for the refusals callers actually branch on — not one exception type per code, which would be a `catch` list nobody maintains.
 
 | Type | Codes | Meaning |
 |---|---|---|
@@ -46,18 +45,18 @@ exception types, which would be a `catch` list nobody maintains.
 | `LimitExceededException` | `owner_limit_exceeded`, `daily_limit_exceeded` | the owner's spending allowance is used up — **do not poll** |
 | `RateLimitedException` | `rate_limited` | a request-rate limit; wait for `RetryAfter`, then send again — an order **resumes the same id** (it comes back as `OrderOutcomeUnknown`), never a new one |
 | `IdempotencyConflictException` | `idempotency_conflict` | one operation id used for two different orders |
-| `InvalidCredentialsException` | `invalid_credentials` | authentication failed (unknown, revoked or wrong key; bad signature or digest; clock) |
+| `InvalidCredentialsException` | `invalid_credentials` | authentication failed (unknown, revoked, expired or replaced key; bad or stale signature; clock) |
 | `ReplayDetectedException` | `replay_detected` | the same signed bytes arrived twice; calling again is safe — on an order the first copy may have bought, so **resume the same id** (an order comes back as `OrderOutcomeUnknown`) |
 | `AuthorizationException` | `insufficient_scope` (a missing permission **or** a source address outside the application's allowed networks — deliberately the same answer), `source_ip_not_allowed` (Anis's own edge block list), `binding_not_authorized`, `account_inactive`, `business_subscription_required`, `wallet_disabled`, `wallet_expired`, `purchase_not_allowed`, `reveal_not_allowed` | the policy or the owner's state does not allow this |
 | `ResourceNotFoundException` | `resource_not_found`, `card_not_found`, `wallet_not_granted` | absent, or not yours — the two are deliberately indistinguishable |
 | `ValidationFailedException` | `validation_failed`, `currency_not_supported` | the request broke a contract rule |
 | `DependencyUnavailableException` | `dependency_unavailable`, `request_timeout`, `internal_error` | no decision was reached — retry a read, **resume** an order |
 | `EnrollmentRefusedException` | `invitation_invalid`, `challenge_expired`, `key_proof_invalid`, `key_duplicate` | an enrollment step was refused |
-| `AnisApiException` | everything else (`allowed_debt_consent_required`, `invoice_reveal_limit_exceeded`, …) | read `Code` |
+| `AnisApiException` | everything else (`allowed_debt_consent_required`, `invoice_reveal_limit_exceeded`, `malformed_signed_request`, …) | read `Code` |
 
-`signature_expired` and `invalid_content_digest` are in the catalogue — and in `PartnerErrorCode` — but Anis does not send them today: an expired signature or a digest that does not describe the body arrives as `invalid_credentials`.
+`malformed_signed_request` (400) means the signed request was badly built — a signature header missing or unreadable, the signed parts not the ones the route needs or not in its order, or a `Content-Digest` that cannot be read or does not describe the body. The SDK builds these itself, so with the SDK it points at something between you and Anis rewriting the request (a proxy that changes headers or the body). It is decided before any key is looked at and says nothing about your key. On an order it comes back as `OrderOutcomeUnknown` (suggested delay 60 seconds): fix what rewrites the request, then resume the same id — never a new one. `signature_expired` and `invalid_content_digest` are in the catalogue — and in `PartnerErrorCode` — but Anis does not send them: an expired signature arrives as `invalid_credentials`, a digest that does not describe the body as `malformed_signed_request`.
 
-All 36 public codes are in `PartnerErrorCode`, generated from the error catalogue, and a test pins every one
+All 37 public codes are in `PartnerErrorCode`, generated from the error catalogue, and a test pins every one
 of them to its exception type and its order outcome. A code this SDK version does not know arrives as
 `PartnerErrorCode.Unknown`, with its wire spelling in `RawCode`. On an order, a refusal marked replayed returns
 `OrderNotPlaced`; otherwise it returns `OrderOutcomeUnknown`, requiring a resume with the same operation id.
@@ -65,11 +64,11 @@ of them to its exception type and its order outcome. A code this SDK version doe
 ## `validation_failed` never names the field
 
 By design: naming the failing member would let anyone probe for valid card ids and price points. The SDK
-already refuses, before sending, a total that is not unit × quantity, mismatched currencies and a quantity
-below one. Anis also refuses:
+already refuses, before sending, a total that is not unit × quantity, mismatched currencies, a quantity
+below one and a unit price that is not greater than zero. Anis also refuses:
 
-- a price that is not written with exactly three decimals, or one Cards will not accept (a zero price, or
-  a currency other than the wallet's);
+- a price that is not written with exactly three decimals, or one Cards will not accept (a currency other than
+  the wallet's);
 - an `externalReference` longer than 100 characters, or with a character outside letters, digits, space
   and `- _ . : / #`;
 - a malformed or tampered paging cursor;

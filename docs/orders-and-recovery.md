@@ -54,6 +54,9 @@ the account's allowed debt, Anis refuses with `allowed_debt_consent_required` (4
 ```csharp
 switch (outcome)
 {
+    case OrderCompleted { CodesWithheld: true } w:
+        await support.ReportWithheldAsync(operationId, ct); // paid, but no codes released: never buy it again
+        break;
     case OrderCompleted c:
         await vault.StoreAsync(c.Credentials, ct); // paid; codes here, ONCE — store them first
         break;
@@ -76,10 +79,10 @@ switch (outcome)
 
 | You get | When | What it carries |
 |---|---|---|
-| `OrderCompleted` | a fresh `201`; or the `200` a **resume** receives when the first answer was lost | the credentials, in `Credentials` |
+| `OrderCompleted` | a fresh `201`; or the `200` a **resume** receives when the first answer was lost | the credentials, in `Credentials`; `CodesWithheld` is true when the order completed with no codes |
 | `OrderProcessing` | `202` | `RetryAfter`, `Location` |
 | `OrderReplayed` | the same id sent again after it completed: the **original** status (usually `201`) with `Idempotency-Replayed: true` | the operation id, the state and the invoice id — no credentials |
-| `OrderOutcomeUnknown` | no answer (timeout, lost connection), an answer that could not be verified, a refusal that reached no decision, a rate limit, or — on a resume — a refusal that is not the order's recorded answer | `SuggestedDelay`, and `Cause` for your logs |
+| `OrderOutcomeUnknown` | no answer (timeout, lost connection), an answer that could not be verified, a refusal that reached no decision, a rate limit, a refusal of your access (`invalid_credentials`, `insufficient_scope`, `wallet_not_granted`), or — on a resume — a refusal that is not the order's recorded answer | `SuggestedDelay`, and `Cause` for your logs |
 | `OrderNotPlaced` | a refusal that closes the order | `Refusal`: the typed refusal with `Code`, `RequestId`, `RetryAfter`, `IsReplayed` |
 
 Five records rather than one object with nullable members, because the difference between them decides whether you have the credentials — and whether the order was bought.
@@ -101,6 +104,8 @@ case OrderCompleted completed:
     await vault.StoreAsync(completed.Credentials, ct);   // do this first, before anything that can throw
     break;
 ```
+
+**Completed, codes withheld.** An order can complete with **no codes**: it was placed and paid, but a card was invalidated or refunded, or a code cannot be released. `CodesWithheld` is then true. The order is complete — never buy it again. The withheld cards cannot be revealed; the order's other cards can. Write to support@anis.ly with the operation id.
 
 ## Recovery is a POST, not a GET
 
@@ -154,7 +159,7 @@ The SDK answers that for you, by the case it returns:
   **same** operation id and the same body. Never a new id. A **rate limit** lands here too: a first attempt
   refused for its rate placed nothing, but the SDK cannot tell that from a copy of an earlier attempt (a
   retry handler in your host, or a create sent again after a timeout) that is still selling, so resume the same
-  id once the wait is over (`SuggestedDelay` is the signed `Retry-After`, or 5 seconds when there is none). On a **resume**, a refusal that is not the order's
+  id once the wait is over (`SuggestedDelay` is the signed `Retry-After`, or 5 seconds when there is none). A refusal of your **access** lands here too — `invalid_credentials`, `insufficient_scope`, `wallet_not_granted` — because it is decided before Anis looks at the order, and the earlier attempt with this id may have sold. Restore access first (`SuggestedDelay` is 60 seconds unless Anis sends `Retry-After`), then resume the same id. On a **resume**, a refusal that is not the order's
   recorded answer lands here too: it was decided before Anis looked at the order, so the earlier attempt's
   outcome is still unknown.
 
@@ -177,10 +182,10 @@ This table classifies a first attempt. On a resume, every fresh (non-replayed) r
 | `wallet_disabled`, `wallet_expired`, `business_subscription_required`, `account_inactive`, `binding_not_authorized` | 403 / 409 | `AuthorizationException` | OrderNotPlaced | The owner account, wallet or subscription needs attention on Anis's side |
 | `idempotency_conflict` | 409 | `IdempotencyConflictException` | OrderNotPlaced | This id already belongs to a **different** order — a bug on your side. That earlier order is untouched; use a new id |
 | `validation_failed`, `currency_not_supported` | 422 | `ValidationFailedException` | OrderNotPlaced | A contract rule was broken; the field is never named — see [Errors](errors.md) |
-| `wallet_not_granted` | 404 | `ResourceNotFoundException` | OrderNotPlaced | The wallet is not granted to this application (or does not exist) |
-| `insufficient_scope` | 403 | `AuthorizationException` | OrderNotPlaced | The application lacks `orders:create` — **or** the call came from outside its allowed networks: Anis gives both the same answer on purpose (see [Routes and permissions](routes-and-permissions.md#before-a-call-is-looked-at)) |
+| `wallet_not_granted` | 404 | `ResourceNotFoundException` | OrderOutcomeUnknown | The wallet is not granted to this application (or does not exist). **Restore access, then resume the same id** — an earlier attempt may have sold |
+| `insufficient_scope` | 403 | `AuthorizationException` | OrderOutcomeUnknown | The application lacks `orders:create` — **or** the call came from outside its allowed networks: Anis gives both the same answer on purpose (see [Routes and permissions](routes-and-permissions.md#before-a-call-is-looked-at)). **Restore access, then resume the same id** — an earlier attempt may have sold |
 | `source_ip_not_allowed` | 403 | `AuthorizationException` | OrderNotPlaced | Anis's own edge refused the address outright; ask Anis |
-| `invalid_credentials` | 401 | `InvalidCredentialsException` | OrderNotPlaced | Key id, key or clock — see [Getting started](getting-started.md#when-a-signature-will-not-verify) |
+| `invalid_credentials` | 401 | `InvalidCredentialsException` | OrderOutcomeUnknown | Key id, key or clock — see [Getting started](getting-started.md#when-a-signature-will-not-verify). **Restore access, then resume the same id** — an earlier attempt may have sold |
 | `replay_detected` | 409 | `ReplayDetectedException` | OrderOutcomeUnknown | The same signed bytes arrived twice (a proxy or retry resent them). The copy that arrived first was admitted and may have bought the cards: **resume with the same id**, never a new one |
 | `rate_limited` | 429 | `RateLimitedException` | OrderOutcomeUnknown | Wait for `RetryAfter` (or back off), then **resume with the same id**. A first-attempt rate limit placed nothing, but the SDK cannot tell it from a resend of an attempt that is still selling, so never a new id |
 | `dependency_unavailable`, `request_timeout`, `internal_error` | 503 / 504 / 500 | `DependencyUnavailableException` | OrderOutcomeUnknown | **Resume with the same id.** Never a new id |

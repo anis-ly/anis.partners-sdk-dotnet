@@ -169,7 +169,6 @@ static async Task<int> EnrolAsync(
         enrollment,
         flags.GetValueOrDefault("key-file") ?? sample.KeyFile,
         flags.TryGetValue("days", out var days) ? int.Parse(days!, CultureInfo.InvariantCulture) : 365,
-        [.. (flags.GetValueOrDefault("cidrs") ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)],
         ct);
 
     return 0;
@@ -218,7 +217,7 @@ internal static class Arguments
     public const string Usage = """
         Anis Partner SDK sample — one command per thing a partner does.
 
-          enrol --invitation <id> --token <token> [--key-file <path>] [--days 365] [--cidrs a/b,c/d]
+          enrol --invitation <id> --token <token> [--key-file <path>] [--days 365]
           enrol-status --invitation <id> --token <token>
 
           tour                                        every read route once, following real ids

@@ -88,6 +88,8 @@ Your own signing key is rotated by enrolling its replacement. Anis staff start t
 new invitation; you enrol a new key exactly like the first (see [Getting started](getting-started.md)), and
 staff record and confirm its fingerprint. During the overlap they set, **both keys sign successfully** —
 move your signer to the new key id inside that window.
+When the overlap ends, the old key is refused with `invalid_credentials` by itself; nobody needs to do anything. Your
+key also has an end date (`EnrollmentStatus.KeyExpiresAt`): ask for its replacement weeks before it.
 
 A revoked key is refused on every route with `401 invalid_credentials`, exactly like an unknown key, from
 the moment staff revoke it. Revoking a key you no longer use does not affect your current one. To sign again after your
@@ -114,4 +116,4 @@ window, a clock a few minutes slow would get an order admitted and completed —
 card codes, discarded as too old. With both at 60 seconds, such a clock is refused before anything is
 bought.
 
-A host clock more than a minute out will fail in both directions. Run NTP.
+Anis refuses a signature created more than about 30 seconds ahead of its clock, and a signature from this SDK lives 60 seconds, so a host clock more than about 30 seconds fast or 60 seconds slow fails in both directions. Run NTP.

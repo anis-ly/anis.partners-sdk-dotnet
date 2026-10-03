@@ -30,22 +30,15 @@ public sealed record EnrollmentKeyRequest
 
     /// <summary>The start of the validity window you ask for.</summary>
     /// <remarks>
-    /// Anis uses only the LENGTH of the window (<see cref="ExpiresAt"/> minus this) and starts it when the
-    /// key is committed. A future start date is not honoured; send the current time.
+    /// Anis uses only the LENGTH of the window (<see cref="ExpiresAt"/> minus this), keeps the shorter of it and
+    /// the validity Anis staff set, and starts it when the key is committed. A future start date is not honoured;
+    /// send the current time.
     /// </remarks>
     [JsonPropertyName("notBefore")] public required DateTimeOffset NotBefore { get; init; }
 
     /// <summary>The end of the validity window you ask for. See <see cref="NotBefore"/>.</summary>
     [JsonPropertyName("expiresAt")] public required DateTimeOffset ExpiresAt { get; init; }
 
-    /// <summary>
-    /// Source networks you propose, in CIDR form. A proposal only: Anis staff confirm the application's
-    /// allowed networks, and a request from any other address is refused with <c>insufficient_scope</c> — the
-    /// same answer as a missing permission, deliberately, so a refusal never says which of the two to work around.
-    /// </summary>
-    [JsonPropertyName("cidrs")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyList<string>? Cidrs { get; init; }
 }
 
 /// <summary>What the gateway returns when a key is submitted: the challenge to sign.</summary>
@@ -107,13 +100,23 @@ public sealed record EnrollmentStatus
     [JsonPropertyName("approvalState")] public string? ApprovalState { get; init; }
 
     /// <summary>
-    /// <c>pendingProof</c>, <c>pendingApproval</c>, <c>active</c> or <c>unavailable</c> (revoked, expired or
-    /// replaced — ask Anis for a new invitation).
+    /// <c>pendingInvitation</c>, <c>pendingProof</c>, <c>pendingApproval</c>, <c>active</c> or <c>unavailable</c> (the
+    /// key is being replaced by a newer one). A revoked, retired or expired key is not reported: the read is refused
+    /// with <c>resource_not_found</c>.
     /// </summary>
     [JsonPropertyName("state")] public string? State { get; init; }
 
-    /// <summary>When the current step lapses. Reported by the status read; absent on the proof answer.</summary>
+    /// <summary>
+    /// When the current step lapses (the invitation, while the key waits for its public half). Reported by the status
+    /// read; absent on the proof answer.
+    /// </summary>
     [JsonPropertyName("expiresAt")] public DateTimeOffset? ExpiresAt { get; init; }
+
+    /// <summary>
+    /// The date the key stops working, once it is active; absent before that and on the proof answer. Ask Anis staff
+    /// for a replacement weeks before it: past it, every call is refused with <c>invalid_credentials</c>.
+    /// </summary>
+    [JsonPropertyName("keyExpiresAt")] public DateTimeOffset? KeyExpiresAt { get; init; }
 }
 
 /// <summary>What the signature self-check reports the gateway saw.</summary>

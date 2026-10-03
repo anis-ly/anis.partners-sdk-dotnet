@@ -31,13 +31,10 @@ public sealed class ErrorMappingTests
         ["idempotency_conflict"] = (typeof(IdempotencyConflictException), OrderRefusalOutcome.NotPlaced),
 
         // Refused at the door, before any order exists.
-        ["insufficient_scope"] = (typeof(AuthorizationException), OrderRefusalOutcome.NotPlaced),
         ["source_ip_not_allowed"] = (typeof(AuthorizationException), OrderRefusalOutcome.NotPlaced),
-        ["invalid_credentials"] = (typeof(InvalidCredentialsException), OrderRefusalOutcome.NotPlaced),
-        ["signature_expired"] = (typeof(InvalidCredentialsException), OrderRefusalOutcome.NotPlaced),
+        // Reserved: in the catalogue, not sent by Anis today.
         ["invalid_content_digest"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
         ["validation_failed"] = (typeof(ValidationFailedException), OrderRefusalOutcome.NotPlaced),
-        ["wallet_not_granted"] = (typeof(ResourceNotFoundException), OrderRefusalOutcome.NotPlaced),
         ["resource_not_found"] = (typeof(ResourceNotFoundException), OrderRefusalOutcome.NotPlaced),
         ["card_not_found"] = (typeof(ResourceNotFoundException), OrderRefusalOutcome.NotPlaced),
 
@@ -55,6 +52,16 @@ public sealed class ErrorMappingTests
         // retry handler, or a create sent again after a timeout). A first-attempt rate limit placed nothing,
         // but the SDK cannot tell the two apart: resume the same id.
         ["rate_limited"] = (typeof(RateLimitedException), OrderRefusalOutcome.Unknown),
+
+        // Refused at the door because the caller's access was withdrawn — the key, a permission or the wallet grant.
+        // Staff can do that while an earlier attempt with the same id is selling, so the order stays open: restore
+        // access, then resume the same id.
+        ["insufficient_scope"] = (typeof(AuthorizationException), OrderRefusalOutcome.Unknown),
+        ["invalid_credentials"] = (typeof(InvalidCredentialsException), OrderRefusalOutcome.Unknown),
+        ["signature_expired"] = (typeof(InvalidCredentialsException), OrderRefusalOutcome.Unknown),
+        ["wallet_not_granted"] = (typeof(ResourceNotFoundException), OrderRefusalOutcome.Unknown),
+        // A badly built signed request: with the SDK, something rewrote it on its way, possibly on a resend.
+        ["malformed_signed_request"] = (typeof(AnisApiException), OrderRefusalOutcome.Unknown),
 
         // Reveals.
         ["reveal_not_allowed"] = (typeof(AuthorizationException), OrderRefusalOutcome.NotPlaced),
