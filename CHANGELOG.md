@@ -4,7 +4,7 @@ All notable changes to the `Anis.Partners` package. Versions follow [Semantic Ve
 
 ## [Unreleased]
 
-## [1.1.0]
+## [1.1.0] - 2026-10-03
 
 An order refused for its rate or for its access is no longer reported as "nothing was bought".
 
