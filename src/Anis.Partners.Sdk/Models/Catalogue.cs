@@ -77,6 +77,12 @@ public sealed record CatalogueSubcategory
 
     /// <summary>Live availability.</summary>
     [JsonPropertyName("available")] public bool Available { get; init; }
+
+    /// <summary>
+    /// Anis's note for buyers of this subcategory's cards (terms, region, how to redeem). Show it to your end
+    /// customer before they buy. Absent when there is none in either language.
+    /// </summary>
+    [JsonPropertyName("disclaimer")] public LocalizedText? Disclaimer { get; init; }
 }
 
 /// <summary>A purchasable card and the price THIS wallet pays for it.</summary>
@@ -124,6 +130,18 @@ public sealed record CatalogueCard
 
     /// <summary>Live availability under the current owner rules.</summary>
     [JsonPropertyName("available")] public bool Available { get; init; }
+
+    /// <summary>
+    /// The fewest of this card one order may carry. Check it before you order: a quantity below it is refused.
+    /// If it is above <see cref="MaximumQuantity"/> the card cannot be bought at all.
+    /// </summary>
+    [JsonPropertyName("minimumQuantity")] public int? MinimumQuantity { get; init; }
+
+    /// <summary>
+    /// The most of this card one order may carry — the card's own limit or Anis's order cap, whichever is lower.
+    /// Check it before you order: a quantity above it is refused.
+    /// </summary>
+    [JsonPropertyName("maximumQuantity")] public int? MaximumQuantity { get; init; }
 }
 
 /// <summary>One page of a cursor-paged list.</summary>
