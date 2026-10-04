@@ -2,7 +2,7 @@
 
 All notable changes to the `Anis.Partners` package. Versions follow [Semantic Versioning](https://semver.org).
 
-## [1.2.0] - unreleased
+## [1.2.0] - 2026-10-04
 
 More of what Anis knows about a card and an order now reaches your code. Every addition is optional, so nothing
 you have written stops compiling or changes behaviour.
