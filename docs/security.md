@@ -42,6 +42,21 @@ enrollment *responses* are, and they simply omit the `;req` binding because ther
 to bind to. `AnisEnrollmentClient` verifies them. The key-submission response carries the challenge and the
 `keyId` a partner then trusts for a year, which makes it the last response anyone should take on faith.
 
+## The enrolment ends with a phone call
+
+A key Anis holds is only as good as the proof that it is yours. Two checks cover the two ways it could go wrong:
+
+- **Before the proof:** `SubmitKeyAsync` computes the thumbprint of the key you sent and compares it, in fixed
+  time, with the one Anis answers with. A different thumbprint throws `EnrollmentKeyMismatchException` and no
+  proof is built.
+- **Before the key goes live:** Anis staff phone your technical contact and ask for the **safety code** your
+  software printed (`EnrollmentKeyResult.SafetyCode`, 16 characters, `XXXX-XXXX-XXXX-XXXX`). The code is the first
+  80 bits of the key's thumbprint, so only the key Anis holds produces it. If it does not match, the key stays
+  pending. Staff do not see the fingerprint or the public key until the code has matched.
+
+Read the code from your own software, not from an email or a chat message, and give it only to Anis staff who called
+the number you registered.
+
 The one genuinely unsigned route is `GET /.well-known/partner-signing-keys.json`, fetched by a client with
 no verifying handler — verifying it would need the keys it is being fetched to supply. The one unsigned
 *answer* is the `503` the gateway sends when its own signer is unavailable; the SDK discards it like any
@@ -86,7 +101,7 @@ the others.
 
 Your own signing key is rotated by enrolling its replacement. Anis staff start the rotation and send you a
 new invitation; you enrol a new key exactly like the first (see [Getting started](getting-started.md)), and
-staff record and confirm its fingerprint. During the overlap they set, **both keys sign successfully** —
+staff verify its safety code by phone and confirm it. During the overlap they set, **both keys sign successfully** —
 move your signer to the new key id inside that window.
 When the overlap ends, the old key is refused with `invalid_credentials` by itself; nobody needs to do anything. Your
 key also has an end date (`EnrollmentStatus.KeyExpiresAt`): ask for its replacement weeks before it.

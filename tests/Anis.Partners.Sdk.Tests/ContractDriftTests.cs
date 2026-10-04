@@ -1,5 +1,8 @@
+using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Anis.Partners.Sdk.Errors;
+using Anis.Partners.Sdk.Models;
 using Anis.Partners.Sdk.Operations;
 using Anis.Partners.Sdk.Signing;
 
@@ -75,6 +78,20 @@ public sealed class ContractDriftTests
 
         Assert.Empty(published.Except(PartnerErrorCodes.All, StringComparer.Ordinal));
         Assert.Empty(PartnerErrorCodes.All.Except(published, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void The_key_submission_answer_model_carries_exactly_the_published_members()
+    {
+        var published = OpenApi.GetProperty("components").GetProperty("schemas").GetProperty("EnrollmentKeyResult")
+            .GetProperty("properties").EnumerateObject().Select(member => member.Name).Order(StringComparer.Ordinal);
+
+        var modelled = typeof(EnrollmentKeyResult).GetProperties()
+            .Select(property => property.GetCustomAttribute<JsonPropertyNameAttribute>()!.Name)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(published, modelled);
+        Assert.Contains("safetyCode", published);
     }
 
     [Fact]

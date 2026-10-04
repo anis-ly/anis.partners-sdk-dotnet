@@ -139,5 +139,39 @@
         }
       }
     }
+  },
+  "components": {
+    "schemas": {
+      "EnrollmentKeyResult": {
+        "type": "object",
+        "description": "Returned exactly once.",
+        "required": [
+          "keyId",
+          "thumbprint",
+          "safetyCode",
+          "challenge"
+        ],
+        "properties": {
+          "keyId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "thumbprint": {
+            "type": "string",
+            "description": "RFC 7638 JWK thumbprint."
+          },
+          "safetyCode": {
+            "type": "string",
+            "description": "The 16-character safety code derived from your key's fingerprint. Anis staff will phone your technical contact and ask you to read it before your key goes live."
+          },
+          "challenge": {
+            "type": "string",
+            "description": "Domain-separated challenge plaintext."
+          },
+          "challengeGeneration": {
+            "type": "integer"
+          }
+        }
+      }
+    }
   }
 }

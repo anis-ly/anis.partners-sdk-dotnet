@@ -8,8 +8,8 @@ You cannot call the API until a key of yours is active. Anis staff create your a
 1. generate a P-256 key pair — the private half never leaves your side;
 2. submit the **public** half, and receive a challenge;
 3. prove you hold the private half;
-4. give Anis staff the key's **fingerprint** through the channel you agreed with them (not through this
-   API). They record it and confirm the key, and from that moment it signs requests.
+4. read your key's **safety code** to Anis staff when they phone your technical contact. They check it against
+   the key they hold and confirm the key, and from that moment it signs requests.
 
 ```csharp
 using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -31,18 +31,28 @@ var status = await enrollment.ProveAsync(submitted, key, ct);
 if (status.ProofState != "accepted")
     throw new InvalidOperationException("The proof failed — check the key, or ask Anis staff to restart if the challenge expired.");   // state stays pendingProof
 
-Console.WriteLine($"key id {submitted.KeyId}, fingerprint {submitted.Thumbprint}");
+Console.WriteLine($"key id {submitted.KeyId}");
+Console.WriteLine($"Your safety code: {submitted.SafetyCode} — Anis staff will call you and ask you to read it.");
 ```
 
-`submitted.KeyId` is the key id you sign with from then on. `submitted.Thumbprint` is the fingerprint staff
-record.
+`submitted.KeyId` is the key id you sign with from then on. `submitted.SafetyCode` is the 16-character code
+(`XXXX-XXXX-XXXX-XXXX`) derived from your key's fingerprint; keep it where the person who answers the call can
+read it. The call goes to the technical contact you gave Anis, so make sure that person knows to expect it. You
+send nobody a fingerprint: the call is the check.
+
+`SubmitKeyAsync` also protects you from a swapped key. It computes the thumbprint of the key you sent
+(`KeyThumbprint.Compute`) and compares it, in fixed time, with the one Anis answers with. If they differ it
+throws `EnrollmentKeyMismatchException` and gives you no result, so no proof can be built on it: ask Anis staff
+to restart the enrollment, and look at anything between you and Anis that rewrites request bodies before you
+enrol again. The safety code is `SafetyCode.FromThumbprint(thumbprint)`; the SDK uses the one Anis answers with
+and derives it itself when the answer has none.
 
 Once `ProofState` is `accepted`, wait for staff to confirm. `GetStatusAsync` reports where the key stands:
 
 | `state` | Meaning |
 |---|---|
 | `pendingProof` | submitted; possession not yet proved |
-| `pendingApproval` | proved; waiting for Anis staff to record the fingerprint and confirm the key |
+| `pendingApproval` | proved; waiting for Anis staff to verify your safety code by phone and confirm the key |
 | `active` | confirmed — the key signs requests |
 | `unavailable` | the key is being replaced by a newer one; once a key has ended (revoked, retired or past its end date) this read is refused with `resource_not_found` |
 
@@ -60,7 +70,7 @@ What Anis may refuse, as `EnrollmentRefusedException`:
 |---|---|
 | `invitation_invalid` | unknown, used or expired invitation or token, or five failed proofs; ask Anis for a new invitation |
 | `challenge_expired` | the proof was built on a challenge generation that is no longer current: Anis staff restarted this enrollment after you received the challenge. Enrol again with the new invitation token staff send you |
-| `key_proof_invalid` | the public key you submitted is not a usable P-256 public key — malformed, of another type or curve, or carrying a private member. Submit the public half exactly as `AnisEnrollmentClient.PublicJwkOf` builds it |
+| `key_proof_invalid` | the public key you submitted is not a usable P-256 public key — malformed, of another type or curve, or carrying a private member. Submit the public half exactly as `AnisEnrollmentClient.PublicJwkOf` builds it; a JWK the SDK cannot fingerprint is refused on your side before anything is sent, with an `ArgumentException` |
 | `key_duplicate` | the key is not waiting for this step — usually this invitation has already taken a key (a submission sent again after its answer was lost), or a proof arrived for a key that no longer waits for one. Ask Anis staff to restart the enrollment; on the proof, it means the proof was already accepted and was sent again — read the status (`GetStatusAsync`) first |
 
 **A proof that fails is not a refusal.** When the signature does not verify, or the proof arrives after the

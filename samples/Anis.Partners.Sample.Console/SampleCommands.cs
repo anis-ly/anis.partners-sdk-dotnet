@@ -238,11 +238,11 @@ internal sealed class SampleCommands(IAnisPartnersClient anis, ISigningKeySource
         Console.WriteLine($"""
 
             key id      {submitted.KeyId:D}      (set Sample:KeyId to this)
-            fingerprint {submitted.Thumbprint}
             private key {Path.GetFullPath(keyFile)}
 
-            Give the fingerprint to Anis staff through the channel you agreed. The key signs requests once they
-            record it and confirm it; `enrol-status` then reports state "active".
+            Your safety code: {submitted.SafetyCode} — Anis staff will call you and ask you to read it.
+            The key signs requests once they have verified it and confirmed the key; `enrol-status` then reports
+            state "active".
             """);
     }
 

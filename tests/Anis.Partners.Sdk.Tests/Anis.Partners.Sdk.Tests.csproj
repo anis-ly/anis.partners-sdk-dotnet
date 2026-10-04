@@ -41,6 +41,7 @@
     <Content Include="$(ConformanceVectors)/request/*.json" Link="vectors/request/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(ConformanceVectors)/response/*.json" Link="vectors/response/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(ConformanceVectors)/enrollment/*.json" Link="vectors/enrollment/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(ConformanceVectors)/safety-code/*.json" Link="vectors/safety-code/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!--

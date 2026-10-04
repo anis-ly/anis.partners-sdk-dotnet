@@ -2,6 +2,24 @@
 
 All notable changes to the `Anis.Partners` package. Versions follow [Semantic Versioning](https://semver.org).
 
+## 1.3.0 — unreleased
+
+Enrolment now ends with a phone call in which you read a short safety code, instead of sending a fingerprint, and the
+SDK checks that Anis holds the key you submitted.
+
+- **Added:** `EnrollmentKeyResult.SafetyCode` — the 16-character code (`XXXX-XXXX-XXXX-XXXX`) derived from your key's
+  fingerprint. Anis staff phone your technical contact and ask you to read it before your key goes live. The SDK
+  derives it from the thumbprint it has just verified against your own key.
+- **Added:** `KeyThumbprint.Compute(PartnerJwk)` — the RFC 7638 thumbprint of a P-256 public key — and
+  `SafetyCode.FromThumbprint(string)`.
+- **Added:** `EnrollmentKeyMismatchException`. `AnisEnrollmentClient.SubmitKeyAsync` computes the thumbprint of the key
+  you send and compares it with the one Anis answers with; if they differ it throws and returns no result, so no
+  possession proof is built on a key you did not submit. Ask Anis staff to restart the enrollment.
+- **Changed:** `SubmitKeyAsync` throws an `ArgumentException`, before sending anything, for a public JWK that is not
+  a complete P-256 key (it used to leave that to Anis, which refused it with `key_proof_invalid`).
+- **Changed:** you no longer send anyone your key's fingerprint. The enrolment guide, the security notes and the
+  sample describe the phone call instead.
+
 ## [1.2.0] - 2026-10-04
 
 More of what Anis knows about a card and an order now reaches your code. Every addition is optional, so nothing

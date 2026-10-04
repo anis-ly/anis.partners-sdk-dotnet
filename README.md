@@ -143,10 +143,11 @@ Not "reviewed and looks right":
 | **9 request vectors** | The SDK signs, then **Anis's own** parser, base builder and verifier run over the result. A vector exists only if Anis rebuilt a **byte-identical** base and accepted the signature. They also record the body each nonce mutation sends — zero bytes on a reveal, `{}` on the self-check — a rule the **gateway** enforces, so the live run is its proof. |
 | **39 response vectors** | Signed by the **gateway's production signer**. 13 the client must accept, 26 it must reject — each a single-change derivation, so a failure names the rule. They include the real repeat of a completed order (`201` + `Idempotency-Replayed`), the recovered completion, and a recorded refusal. |
 | **2 enrollment proof vectors** | The SDK builds the possession proof, and **Anis's own** proof check rebuilds the message byte for byte and accepts it; the DER form of the same signature is refused. |
+| **4 safety-code vectors** | A real key, its thumbprint, the 16-character code Anis staff ask you to read, and every way an entry may be typed (case, dashes, spaces, look-alike letters, the full thumbprint, wrong and short input), derived by an independent Python implementation. |
 | **Contract drift tests** | The route table is diffed against `contracts/partner-public-v1.json` **in both directions**, profiles included; the error codes against `contracts/error-catalogue.json`. |
 | **Pipeline tests** | Every order outcome as the live gateway sends it, every refusal code, cursor paging, the body of each nonce mutation, the idempotency header, money at scale three, settings binding, several applications in one host, a host that retries every call, an order that times out, enrollment end to end, and a tampered response being discarded. |
 | **Telemetry redaction** | Every log line, span tag and metric tag captured, asserted to contain no secret — and asserted non-empty, so it cannot pass vacuously. |
-| **Python cross-checks** | Independent implementations reproduce every request base, every response verdict and every enrollment proof — proof the contract is expressible outside .NET. |
+| **Python cross-checks** | Independent implementations reproduce every request base, every response verdict, every enrollment proof and every safety code — proof the contract is expressible outside .NET. |
 
 ```bash
 dotnet test Anis.Partners.Sdk.slnx      # on net8.0 AND net10.0
