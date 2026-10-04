@@ -99,6 +99,26 @@ public sealed record Order
 
     /// <summary>When it completed.</summary>
     [JsonPropertyName("completedAt")] public DateTimeOffset? CompletedAt { get; init; }
+
+    /// <summary>
+    /// Your own reference, as you sent it in <see cref="CreateOrderRequest.ExternalReference"/>. Returned on every
+    /// answer for an order, so a lookup or a replay tells you which of your sales it was.
+    /// </summary>
+    [JsonPropertyName("externalReference")] public string? ExternalReference { get; init; }
+
+    /// <summary>
+    /// Why a looked-up order failed: the refusal code Anis recorded. Present only when you read an order with
+    /// <c>GET /v1/orders/{operationId}</c> and <see cref="Status"/> is <see cref="OrderStatus.Failed"/>. Nothing
+    /// was bought; fix the cause and place a new order under a new id.
+    /// </summary>
+    [JsonPropertyName("failureCode")] public string? FailureCode { get; init; }
+
+    /// <summary>
+    /// True only on the answer that first reports an order that was placed and PAID but whose codes Anis withheld.
+    /// Do not buy it again; write to support@anis.ly with the operation id. Never sent as false; absent on a replay
+    /// or a lookup means "not stated". Prefer <see cref="OrderCompleted.CodesWithheld"/>.
+    /// </summary>
+    [JsonPropertyName("codesWithheld")] public bool? CodesWithheld { get; init; }
 }
 
 /// <summary>The outcome of creating or resuming an order: one of five cases, and nothing else.</summary>
@@ -141,7 +161,11 @@ public sealed record OrderCompleted(Order Order) : OrderResult(Order.OperationId
     public IReadOnlyList<RevealedCredential> Credentials => Order.SoldCards ?? [];
 
     /// <summary>True when the order completed but Anis released no codes. Do not buy it again; see the remarks.</summary>
-    public bool CodesWithheld => Credentials.Count == 0;
+    /// <remarks>
+    /// True when Anis says so (<see cref="Order.CodesWithheld"/>) or when the answer carries no credentials at all,
+    /// which is how Anis reported it before it sent the flag.
+    /// </remarks>
+    public bool CodesWithheld => Order.CodesWithheld == true || Credentials.Count == 0;
 }
 
 /// <summary>The order was admitted and has no outcome yet.</summary>

@@ -2,7 +2,29 @@
 
 All notable changes to the `Anis.Partners` package. Versions follow [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.2.0] - unreleased
+
+More of what Anis knows about a card and an order now reaches your code. Every addition is optional, so nothing
+you have written stops compiling or changes behaviour.
+
+- **Added:** `CatalogueSubcategory.Disclaimer` — Anis's note for buyers of that subcategory's cards. Show it to
+  your end customer before they buy.
+- **Added:** `CatalogueCard.MinimumQuantity` and `MaximumQuantity` — the fewest and most of a card one order may
+  carry. Check them before you order; a quantity outside them is refused.
+- **Added:** `Order.ExternalReference` — your own reference, returned on every answer for the order, so a lookup or a
+  replay tells you which of your sales it was.
+- **Added:** `Order.FailureCode` — why an order you looked up failed (the refusal code Anis recorded). Only a lookup
+  of a failed order carries it.
+- **Added:** `Order.CodesWithheld` — Anis says in so many words that the order was paid but its codes were withheld.
+  Do not buy it again; write to support@anis.ly. `OrderCompleted.CodesWithheld` is now true when Anis says so **or**
+  when the answer carries no credentials, so the 1.1.0 behaviour still holds for answers without the flag.
+- **Added:** `RevealedCredential.ExpiryDate` — the last day the card can be used; tell your end customer. On a reveal
+  (single card or whole invoice) the credential also carries `InvoiceId`, `Card` and `PurchasedAt`.
+- **Added:** on `MaskedCard`: `UnitPrice` (what one card cost), `ExpiryDate`, `InvoiceNumber` (the number printed
+  on the invoice; quote it to support), `FaceValue` and `Subcategory` (new `MaskedCardSubcategory`).
+- **Changed (meaning):** `MaskedCard.CredentialAvailable` is now true only when a reveal would release a code; a
+  refunded card reads false.
+- The SDK adds no validation of its own for the quantity limits; it only reports them.
 
 ## [1.1.0] - 2026-10-03
 

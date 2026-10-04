@@ -64,6 +64,65 @@ public sealed class OrderOutcomeTests
         Assert.True(completed.CodesWithheld);
     }
 
+    // Anis now says so in so many words, with the reference the partner sent. The flag alone is enough even if a
+    // credential were present; the empty-credentials fallback above keeps working for answers without the flag.
+    [Fact]
+    public async Task A_completion_that_says_its_codes_are_withheld_is_withheld_and_carries_the_reference()
+    {
+        using var fixture = new PipelineFixture();
+
+        fixture.Stub.Status = HttpStatusCode.Created;
+        fixture.Stub.NoStore = true;
+        fixture.Stub.Location = $"/v1/orders/{Operation:D}";
+        fixture.Stub.Body =
+            $$"""{"operationId":"{{Operation:D}}","status":"completed","externalReference":"INV-77","codesWithheld":true}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        var completed = Assert.IsType<OrderCompleted>(result);
+
+        Assert.Empty(completed.Credentials);
+        Assert.True(completed.Order.CodesWithheld);
+        Assert.True(completed.CodesWithheld);
+        Assert.Equal("INV-77", completed.Order.ExternalReference);
+    }
+
+    [Fact]
+    public async Task The_withheld_flag_alone_makes_the_completion_withheld()
+    {
+        using var fixture = new PipelineFixture();
+
+        fixture.Stub.Status = HttpStatusCode.Created;
+        fixture.Stub.NoStore = true;
+        fixture.Stub.Location = $"/v1/orders/{Operation:D}";
+        fixture.Stub.Body =
+            $$"""{"operationId":"{{Operation:D}}","status":"completed","codesWithheld":true,"soldCards":[{"soldCardId":"4a6c2e81-7b39-4d15-a2f8-3e7b9c1d5046","voucher":"1234"}]}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        Assert.True(Assert.IsType<OrderCompleted>(result).CodesWithheld);
+    }
+
+    [Fact]
+    public async Task A_completion_with_credentials_and_no_flag_is_not_withheld()
+    {
+        using var fixture = new PipelineFixture();
+
+        fixture.Stub.Status = HttpStatusCode.Created;
+        fixture.Stub.NoStore = true;
+        fixture.Stub.Location = $"/v1/orders/{Operation:D}";
+        fixture.Stub.Body =
+            $$"""{"operationId":"{{Operation:D}}","status":"completed","soldCards":[{"soldCardId":"4a6c2e81-7b39-4d15-a2f8-3e7b9c1d5046","voucher":"1234","expiryDate":"2027-03-31"}]}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        var completed = Assert.IsType<OrderCompleted>(result);
+
+        Assert.False(completed.CodesWithheld);
+        Assert.Null(completed.Order.CodesWithheld);
+        Assert.Equal(new DateOnly(2027, 3, 31), completed.Credentials[0].ExpiryDate);
+    }
+
     [Fact]
     public async Task A_repeat_after_completion_is_replayed_and_carries_no_credentials()
     {
