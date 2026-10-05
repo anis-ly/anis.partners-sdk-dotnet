@@ -15,8 +15,9 @@ namespace Anis.Partners.Sdk.Enrollment;
 ///
 /// The flow: read the invitation, submit the PUBLIC half of a new P-256 key, prove possession of the
 /// private half with <see cref="ProveAsync(EnrollmentKeyResult, ECDsa, CancellationToken)"/>, then wait for
-/// Anis staff to record and confirm the key's fingerprint — at which point <see cref="GetStatusAsync"/>
-/// reports <c>active</c> and the key signs requests. The private half never leaves the caller.
+/// Anis staff to phone your technical contact and ask for the key's <see cref="EnrollmentKeyResult.SafetyCode"/>
+/// before they confirm it — at which point <see cref="GetStatusAsync"/> reports <c>active</c> and the key signs
+/// requests. The private half never leaves the caller.
 ///
 /// Run once, by a human or a deployment step, and dispose the client afterwards.
 /// </remarks>
@@ -118,8 +119,8 @@ public sealed class AnisEnrollmentClient : IDisposable
     /// <summary>Reads where enrollment stands.</summary>
     /// <remarks>
     /// <c>state</c> is <c>pendingProof</c> until possession is proved, then <c>pendingApproval</c> until Anis
-    /// staff record the key's fingerprint and confirm it, then <c>active</c>: from that moment the key signs
-    /// requests. <c>unavailable</c> means the key is being replaced by a newer one. Once a key has ended
+    /// staff verify the key's safety code by phone and confirm it, then <c>active</c>: from that moment the key
+    /// signs requests. <c>unavailable</c> means the key is being replaced by a newer one. Once a key has ended
     /// (revoked, retired or past its end date) the read is refused with <c>resource_not_found</c>, like an
     /// unknown invitation.
     /// </remarks>
@@ -127,11 +128,30 @@ public sealed class AnisEnrollmentClient : IDisposable
         => _transport.SendEnrollmentAsync<EnrollmentStatus>(HttpMethod.Get, "/v1/enrollments/{invitationId}/status", $"v1/enrollments/{_invitationId:D}/status", null, cancellationToken);
 
     /// <summary>Submits the PUBLIC half of a freshly generated key and receives the challenge to sign.</summary>
-    public Task<EnrollmentKeyResult> SubmitKeyAsync(EnrollmentKeyRequest request, CancellationToken cancellationToken = default)
+    /// <remarks>
+    /// The key's thumbprint is computed here (<see cref="KeyThumbprint.Compute"/>) before anything is sent and
+    /// compared, in fixed time, with the one Anis answers with. If they differ the call throws
+    /// <see cref="EnrollmentKeyMismatchException"/> and the answer is never returned, so a proof cannot be built on
+    /// it. The result's <see cref="EnrollmentKeyResult.SafetyCode"/> is derived here from that verified thumbprint, and is
+    /// what you read to Anis staff on the phone.
+    /// </remarks>
+    /// <exception cref="ArgumentException">The public JWK is not a complete P-256 public key; nothing was sent.</exception>
+    /// <exception cref="EnrollmentKeyMismatchException">Anis holds a different key than the one you submitted.</exception>
+    public async Task<EnrollmentKeyResult> SubmitKeyAsync(EnrollmentKeyRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        return _transport.SendEnrollmentAsync<EnrollmentKeyResult>(HttpMethod.Post, "/v1/enrollments/{invitationId}/keys", $"v1/enrollments/{_invitationId:D}/keys", request, cancellationToken);
+        var local = KeyThumbprint.Compute(request.PublicJwk);
+
+        var answer = await _transport.SendEnrollmentAsync<EnrollmentKeyResult>(
+            HttpMethod.Post, "/v1/enrollments/{invitationId}/keys", $"v1/enrollments/{_invitationId:D}/keys", request, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (answer.Thumbprint is not { Length: > 0 } server || !SafetyCode.FixedTimeEquals(local, server))
+            throw new EnrollmentKeyMismatchException(local, answer.Thumbprint);
+
+        // The code is always derived from the thumbprint just verified against your own key, never taken on trust.
+        return answer with { SafetyCode = SafetyCode.FromThumbprint(local) };
     }
 
     /// <summary>Submits a possession proof built by <see cref="CreateProof(EnrollmentKeyResult, ECDsa)"/>.</summary>

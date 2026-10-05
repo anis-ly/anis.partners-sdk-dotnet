@@ -110,7 +110,9 @@ public sealed class EnrollmentTests
 
         var stub = new SignedResponseStub(responseKey, ResponseKeyId) { SignedAt = Now, NoStore = true };
 
-        stub.Bodies.Enqueue($$"""{"keyId":"{{Invitation:D}}","thumbprint":"sT9pY2vQ4mW7nK1xR8cL3hB6fJ0dG5aZ2eU9oI4tN7w","challenge":"tX3vQ9m2Lr8Kc4Hw1Zp7Ns0Ye6Ud5Jb2Gf9Aq3Vk8Mo","challengeGeneration":1}""");
+        var thumbprint = KeyThumbprint.Compute(AnisEnrollmentClient.PublicJwkOf(partnerKey));
+
+        stub.Bodies.Enqueue($$"""{"keyId":"{{Invitation:D}}","thumbprint":"{{thumbprint}}","challenge":"tX3vQ9m2Lr8Kc4Hw1Zp7Ns0Ye6Ud5Jb2Gf9Aq3Vk8Mo","challengeGeneration":1}""");
         stub.Bodies.Enqueue($$"""{"keyId":"{{Invitation:D}}","challengeGeneration":1,"proofState":"accepted","approvalState":"pending","state":"pendingApproval"}""");
 
         using var enrollment = AnisEnrollmentClient.Create(
@@ -124,6 +126,10 @@ public sealed class EnrollmentTests
                 ExpiresAt = Now.AddYears(1),
             },
             TestContext.Current.CancellationToken);
+
+        // The SDK derives the safety code from the thumbprint it has just checked.
+        Assert.Equal(thumbprint, submitted.Thumbprint);
+        Assert.Equal(SafetyCode.FromThumbprint(thumbprint), submitted.SafetyCode);
 
         var status = await enrollment.ProveAsync(submitted, partnerKey, TestContext.Current.CancellationToken);
 
@@ -236,6 +242,144 @@ public sealed class EnrollmentTests
         var withoutEndDate = await enrollment.GetStatusAsync(TestContext.Current.CancellationToken);
         Assert.Null(withoutEndDate.KeyExpiresAt);
     }
+
+    [Theory]
+    [MemberData(nameof(Vectors))]
+    public async Task The_sdk_computes_the_thumbprint_Commands_computed(string path)
+    {
+        var vector = JsonDocument.Parse(await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken)).RootElement;
+        var jwk = vector.GetProperty("key").GetProperty("publicJwk");
+
+        var computed = KeyThumbprint.Compute(new PartnerJwk
+        {
+            Kty = jwk.GetProperty("kty").GetString(),
+            Crv = jwk.GetProperty("crv").GetString(),
+            X = jwk.GetProperty("x").GetString(),
+            Y = jwk.GetProperty("y").GetString(),
+        });
+
+        Assert.Equal(vector.GetProperty("keySubmissionResult").GetProperty("thumbprint").GetString(), computed);
+    }
+
+    [Fact]
+    public void A_jwk_that_is_not_a_complete_p256_public_key_has_no_thumbprint()
+    {
+        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var jwk = AnisEnrollmentClient.PublicJwkOf(key);
+
+        Assert.Throws<ArgumentException>(() => KeyThumbprint.Compute(jwk with { Kty = "RSA" }));
+        Assert.Throws<ArgumentException>(() => KeyThumbprint.Compute(jwk with { Crv = "P-384" }));
+        Assert.Throws<ArgumentException>(() => KeyThumbprint.Compute(jwk with { X = null }));
+        Assert.Throws<ArgumentException>(() => KeyThumbprint.Compute(jwk with { Y = jwk.Y![..^1] }));
+        Assert.Throws<ArgumentException>(() => KeyThumbprint.Compute(jwk with { X = new string('+', 43) }));
+    }
+
+    [Fact]
+    public void The_private_member_does_not_change_the_thumbprint()
+    {
+        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var jwk = AnisEnrollmentClient.PublicJwkOf(key);
+
+        Assert.Equal(KeyThumbprint.Compute(jwk), KeyThumbprint.Compute(jwk with { D = "ignored", Kid = "ignored" }));
+    }
+
+    [Fact]
+    public async Task The_safety_code_is_derived_from_the_verified_thumbprint_never_taken_from_the_answer()
+    {
+        using var responseKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var partnerKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        var thumbprint = KeyThumbprint.Compute(AnisEnrollmentClient.PublicJwkOf(partnerKey));
+        var stub = new SignedResponseStub(responseKey, ResponseKeyId)
+        {
+            SignedAt = Now,
+            NoStore = true,
+            Body = $$"""{"keyId":"{{Invitation:D}}","thumbprint":"{{thumbprint}}","safetyCode":"AAAA-BBBB-CCCC-DDDD","challenge":"c","challengeGeneration":1}""",
+        };
+
+        using var enrollment = AnisEnrollmentClient.Create(
+            new Uri("https://partners.anis.ly"), Invitation, Token, KeysFor(responseKey), stub, new FixedClock(Now));
+
+        var submitted = await enrollment.SubmitKeyAsync(KeyRequest(partnerKey), TestContext.Current.CancellationToken);
+
+        Assert.Equal(SafetyCode.FromThumbprint(thumbprint), submitted.SafetyCode);
+    }
+
+    [Fact]
+    public async Task A_key_Anis_answers_for_with_another_thumbprint_stops_the_enrollment_before_any_proof()
+    {
+        using var responseKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var partnerKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var otherKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        var other = KeyThumbprint.Compute(AnisEnrollmentClient.PublicJwkOf(otherKey));
+        var stub = new SignedResponseStub(responseKey, ResponseKeyId)
+        {
+            SignedAt = Now,
+            NoStore = true,
+            Body = $$"""{"keyId":"{{Invitation:D}}","thumbprint":"{{other}}","safetyCode":"AAAA-BBBB-CCCC-DDDD","challenge":"c","challengeGeneration":1}""",
+        };
+
+        using var enrollment = AnisEnrollmentClient.Create(
+            new Uri("https://partners.anis.ly"), Invitation, Token, KeysFor(responseKey), stub, new FixedClock(Now));
+
+        var failure = await Assert.ThrowsAsync<EnrollmentKeyMismatchException>(
+            () => enrollment.SubmitKeyAsync(KeyRequest(partnerKey), TestContext.Current.CancellationToken));
+
+        Assert.Equal(KeyThumbprint.Compute(AnisEnrollmentClient.PublicJwkOf(partnerKey)), failure.LocalThumbprint);
+        Assert.Equal(other, failure.ServerThumbprint);
+
+        // Only the key submission went out; the answer's challenge was never handed back to build a proof on.
+        Assert.Single(stub.Requests);
+        Assert.DoesNotContain("challenge", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_answer_without_a_thumbprint_is_a_mismatch_too()
+    {
+        using var responseKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var partnerKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        var stub = new SignedResponseStub(responseKey, ResponseKeyId)
+        {
+            SignedAt = Now,
+            NoStore = true,
+            Body = $$"""{"keyId":"{{Invitation:D}}","challenge":"c","challengeGeneration":1}""",
+        };
+
+        using var enrollment = AnisEnrollmentClient.Create(
+            new Uri("https://partners.anis.ly"), Invitation, Token, KeysFor(responseKey), stub, new FixedClock(Now));
+
+        var failure = await Assert.ThrowsAsync<EnrollmentKeyMismatchException>(
+            () => enrollment.SubmitKeyAsync(KeyRequest(partnerKey), TestContext.Current.CancellationToken));
+
+        Assert.Null(failure.ServerThumbprint);
+    }
+
+    [Fact]
+    public async Task A_key_the_sdk_cannot_fingerprint_is_refused_before_anything_is_sent()
+    {
+        using var responseKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var partnerKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        var stub = new SignedResponseStub(responseKey, ResponseKeyId) { SignedAt = Now, NoStore = true };
+
+        using var enrollment = AnisEnrollmentClient.Create(
+            new Uri("https://partners.anis.ly"), Invitation, Token, KeysFor(responseKey), stub, new FixedClock(Now));
+
+        var request = KeyRequest(partnerKey) with { PublicJwk = AnisEnrollmentClient.PublicJwkOf(partnerKey) with { X = null } };
+
+        await Assert.ThrowsAsync<ArgumentException>(() => enrollment.SubmitKeyAsync(request, TestContext.Current.CancellationToken));
+
+        Assert.Empty(stub.Requests);
+    }
+
+    private static EnrollmentKeyRequest KeyRequest(ECDsa key) => new()
+    {
+        PublicJwk = AnisEnrollmentClient.PublicJwkOf(key),
+        NotBefore = Now,
+        ExpiresAt = Now.AddYears(1),
+    };
 
     private static EnrollmentKeyResult Submitted() => new()
     {

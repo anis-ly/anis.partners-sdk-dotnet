@@ -5,7 +5,8 @@ Run:  python3 tools/sync-contracts.py            write the copies, then run tool
 
 The gateway folder defaults to ../../Ecom-LTD/anis.partners-consumers-gateway/contracts; set
 ANIS_GATEWAY_CONTRACTS to point elsewhere. The copies are reduced on purpose: the catalogue keeps only the
-public rows, without their documentation URL; the OpenAPI keeps only each route's signing kind.
+public rows, without their documentation URL; the OpenAPI keeps each route's signing kind and the one schema the SDK
+model is held against (the key-submission answer).
 """
 import json, os, sys
 
@@ -13,6 +14,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GATEWAY = os.environ.get("ANIS_GATEWAY_CONTRACTS") or os.path.join(
     ROOT, "..", "..", "Ecom-LTD", "anis.partners-consumers-gateway", "contracts")
 HERE = os.path.join(ROOT, "contracts")
+KEPT_SCHEMAS = ["EnrollmentKeyResult"]
 
 
 def load(path):
@@ -36,7 +38,8 @@ def openapi(gateway, current):
                 if isinstance(operation, dict) and "requestKind" in operation.get("x-anis-route", {})}
         if kept:
             paths[path] = kept
-    return {"openapi": current["openapi"], "info": current["info"], "paths": paths}
+    schemas = {name: gateway["components"]["schemas"][name] for name in KEPT_SCHEMAS}
+    return {"openapi": current["openapi"], "info": current["info"], "paths": paths, "components": {"schemas": schemas}}
 
 
 check = "--check" in sys.argv

@@ -29,8 +29,8 @@ export Sample__KeyId=3f2a9c14-8d6e-4b21-9f07-5c8ab2d61e43
 
 | Command | Does |
 |---|---|
-| `enrol --invitation <id> --token <token> [--key-file f] [--days 365]` | generates a P-256 key, saves the private half first (mode 600), submits the public half, proves possession, prints the key id and the fingerprint to give Anis staff |
-| `enrol-status --invitation <id> --token <token>` | where the key stands: `pendingApproval` until staff confirm, then `active` |
+| `enrol --invitation <id> --token <token> [--key-file f] [--days 365]` | generates a P-256 key, saves the private half first (mode 600), submits the public half, proves possession, prints the key id and your safety code, which Anis staff will phone you to hear |
+| `enrol-status --invitation <id> --token <token>` | where the key stands: `pendingApproval` until staff have verified your safety code and confirmed the key, then `active` |
 | `tour` | every read route once, following real ids from one answer to the next — moves no money |
 | `profile`, `wallets`, `wallet <w>` | identity and scopes; wallets and balances |
 | `categories <w>`, `subcategories <w> <c>`, `subcategory <w> <s>`, `cards <w> <s>` | the catalogue, priced for wallet `w` |

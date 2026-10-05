@@ -48,10 +48,22 @@ public sealed record EnrollmentKeyResult
     [JsonPropertyName("keyId")] public Guid KeyId { get; init; }
 
     /// <summary>
-    /// RFC 7638 thumbprint of the submitted key. Anis staff record this fingerprint through a channel
-    /// independent of this API before confirming the key, so share it with them the way you agreed.
+    /// RFC 7638 thumbprint of the submitted key, as Anis computed it. <c>AnisEnrollmentClient.SubmitKeyAsync</c>
+    /// has already checked it against the thumbprint of the key you sent, so it is the same key. You do not
+    /// send it to anyone: you read the <see cref="SafetyCode"/> derived from it.
     /// </summary>
     [JsonPropertyName("thumbprint")] public string? Thumbprint { get; init; }
+
+    /// <summary>
+    /// The 16-character safety code (<c>XXXX-XXXX-XXXX-XXXX</c>) derived from your key's fingerprint. Anis staff
+    /// will phone your technical contact and ask you to read it before your key goes live.
+    /// </summary>
+    /// <remarks>
+    /// <c>SubmitKeyAsync</c> derives it from the thumbprint it has just verified against your own key
+    /// (<c>SafetyCode.FromThumbprint</c>), so it never repeats a value on trust. Keep it where the person who takes
+    /// that call can read it.
+    /// </remarks>
+    [JsonPropertyName("safetyCode")] public string? SafetyCode { get; init; }
 
     /// <summary>The challenge. The proof signs a message built from it — see <c>AnisEnrollmentClient.ProofMessage</c>.</summary>
     [JsonPropertyName("challenge")] public string? Challenge { get; init; }
@@ -78,8 +90,8 @@ public sealed record EnrollmentProofRequest
 
 /// <summary>Where enrollment stands.</summary>
 /// <remarks>
-/// After a successful proof the key waits in <c>pendingApproval</c> until Anis staff record its fingerprint
-/// and confirm it; then <see cref="State"/> is <c>active</c> and the key signs requests. That wait is a
+/// After a successful proof the key waits in <c>pendingApproval</c> until Anis staff verify its safety code
+/// by phone and confirm it; then <see cref="State"/> is <c>active</c> and the key signs requests. That wait is a
 /// control, not a queue to work around.
 /// </remarks>
 public sealed record EnrollmentStatus
