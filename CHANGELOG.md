@@ -2,7 +2,7 @@
 
 All notable changes to the `Anis.Partners` package. Versions follow [Semantic Versioning](https://semver.org).
 
-## 1.3.0 — unreleased
+## [1.3.0] - 2026-10-05
 
 Enrolment now ends with a phone call in which you read a short safety code, instead of sending a fingerprint, and the
 SDK checks that Anis holds the key you submitted.
