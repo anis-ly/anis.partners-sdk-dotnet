@@ -113,7 +113,11 @@ vault outage does not look like an Anis outage.
 
 ## A response you cannot verify is not an error — it is discarded
 
-For a read, catch the verification exception:
+Only the routes whose answers Anis signs can end this way: orders, order reads, both reveals, enrolment and the
+signature self-check. The information reads — profile, wallets, catalogue, owned cards — are answered unsigned and
+never verified, so their refusals always arrive as the `AnisApiException` types above.
+
+For a signed read, catch the verification exception:
 
 ```csharp
 catch (UnverifiableResponseException failure)
@@ -130,7 +134,8 @@ content is discarded and never reaches you.
 Treat it as an infrastructure or integrity problem, not a business one. The usual causes are an intercepting
 proxy that rewrites headers, a clock more than 60 seconds out, or a key rotation your key cache has not
 caught up with — the SDK already refreshes once on an unknown key version. One cause is Anis itself: when its
-response signer is unavailable, the gateway answers with a deliberately unsigned `503` (`SignatureMissing`).
+response signer is unavailable, the gateway answers a signed route with a deliberately unsigned `503`
+(`SignatureMissing`). The information reads do not need the signer and keep answering.
 
 On an **order**, an unverifiable response comes back as `OrderOutcomeUnknown`: resume with the same operation id.
 On a read, retry.

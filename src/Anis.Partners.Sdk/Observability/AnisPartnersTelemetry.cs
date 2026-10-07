@@ -36,7 +36,7 @@ public static class AnisPartnersTelemetry
     internal static readonly Histogram<double> RequestDuration = Meter.CreateHistogram<double>(
         "anis.partners.request.duration",
         unit: "ms",
-        description: "Duration of an Anis Partner API call, from signing to a verified response.");
+        description: "Duration of an Anis Partner API call, from signing to a usable response (verified, on a route Anis signs).");
 
     /// <summary>Time spent building the base and signing, in milliseconds.</summary>
     /// <remarks>

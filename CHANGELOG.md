@@ -2,6 +2,31 @@
 
 All notable changes to the `Anis.Partners` package. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.4.0] - 2026-10-07
+
+Anis now signs only the answers that move money, deliver card codes or establish a key, plus the signature self-check.
+The information reads are answered unsigned, and the SDK stops verifying them. Every request is still signed exactly
+as before, and no public type or member changed.
+
+- **Changed:** the answers of `Profile.GetAsync`, `Wallets.ListAsync` / `ListPageAsync` / `GetAsync`, the four
+  `Catalogue` reads and `OwnedCards.ListAsync` / `ListPageAsync` / `GetAsync` — success and refusal — are returned
+  as they arrive, without verification. They carry `Content-Digest` and `X-Request-Id` but no `Signature`; the SDK
+  does not check the digest either, because a digest nothing signs proves nothing. These calls no longer fetch Anis's
+  published key document, so they keep working while it cannot be reached.
+- **Unchanged:** every answer of an order (create, resume and read), a reveal (one card or an invoice), the four
+  enrolment routes and the signature self-check is verified as before, and one that arrives with no signature is
+  still discarded (`SignatureMissing`).
+- **How it is decided:** per route, in the SDK's route table, never from what an answer carries. A signature that
+  turns up on an information read is not checked; a signed route's answer without one is never let through.
+- **Effect on your code:** none to compile. An `UnverifiableResponseException` can no longer come from the
+  information reads, so their refusals always arrive as `AnisApiException`.
+- **Effect on telemetry:** `anis.partners.response.verification.failures`, log event 1003 and
+  `error.type=unverifiable` now come only from the signed routes. The first `signing_keys.fetches` happens at the
+  first signed answer, not the first call.
+- **Upgrade:** 1.3.0 and earlier verify every answer, so they discard the unsigned information answers as
+  `SignatureMissing`. 1.4.0 works against a gateway that still signs them too: those signatures are simply not
+  checked.
+
 ## [1.3.0] - 2026-10-05
 
 Enrolment now ends with a phone call in which you read a short safety code, instead of sending a fingerprint, and the

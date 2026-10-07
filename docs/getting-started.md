@@ -178,7 +178,7 @@ otherwise stack onto the first and sign with the wrong key.
 (`UseServiceProviderFactory(...)`), that container must support them — Autofac 9 or later, Lamar 12.1 or
 later, and SimpleInjector (which leaves the built-in container in place) all do. One that does not stops the
 host at startup with *"This service descriptor is keyed. Your service provider may not support keyed
-services."* In that case build the client directly instead: `AnisPartnersClient.Create(options, signer)` — requests are signed and answers verified without the container. Build it once and keep it.
+services."* In that case build the client directly instead: `AnisPartnersClient.Create(options, signer)` — requests are signed and signed answers verified without the container. Build it once and keep it.
 
 **Note what is not there.** No environment. No key. See [Security](security.md).
 

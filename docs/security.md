@@ -35,12 +35,35 @@ is a fully isolated copy with its own authority, keys and data. Which one you ta
 An SDK-level environment switch would be one line that repoints production traffic, which is exactly the
 line somebody edits by accident.
 
-## Responses are always verified
+## Every answer that moves money, delivers codes or establishes a key is verified
+
+Anis signs the answers of nine routes, and only those: placing an order, reading an order, revealing a card,
+revealing an invoice's cards, the four enrolment routes, and the signature self-check. On those routes **every**
+answer is signed — the success and each refusal, including a refusal raised before the route's own code runs (a
+rate limit, a malformed request, an access refusal). The SDK verifies each one before you see it and discards one it
+cannot verify. An answer on one of those routes that arrives with **no** signature is discarded too
+(`SignatureMissing`): it is not an answer Anis sends there.
 
 That includes **enrollment**. Enrollment *requests* are not signed — they carry a bearer-style token — but
 enrollment *responses* are, and they simply omit the `;req` binding because there is no request signature
 to bind to. `AnisEnrollmentClient` verifies them. The key-submission response carries the challenge and the
 `keyId` a partner then trusts for a year, which makes it the last response anyone should take on faith.
+
+## The information reads are answered unsigned
+
+Your profile, your wallets, the catalogue and your owned cards (list and masked read) are answered with
+`Content-Digest` and `X-Request-Id` but no `Signature` or `Signature-Input`. Your *request* is signed there exactly
+as anywhere else — that is how Anis knows it is you. The SDK returns those answers as they arrive, refusals
+included, without verifying them and without fetching Anis's published keys, so these reads keep working while the
+key document cannot be reached. TLS to the authority you were given is what protects them.
+
+The SDK does not check `Content-Digest` on those answers either. A digest nothing signs is vouched for by nobody —
+whoever could change the body could change the digest with it — so checking it would add a way to fail and no
+protection. Card codes only ever arrive in a signed answer — a reveal or a completed order.
+
+Which routes are verified is fixed in the SDK, per route, and pinned by a test against the published contract. It
+is never decided from the answer: a signature that turns up on an information read is not checked, and a signed
+route's answer without one is never let through.
 
 ## The enrolment ends with a phone call
 
@@ -57,21 +80,22 @@ A key Anis holds is only as good as the proof that it is yours. Two checks cover
 Read the code from your own software, not from an email or a chat message, and give it only to Anis staff who called
 the number you registered.
 
-The one genuinely unsigned route is `GET /.well-known/partner-signing-keys.json`, fetched by a client with
-no verifying handler — verifying it would need the keys it is being fetched to supply. The one unsigned
-*answer* is the `503` the gateway sends when its own signer is unavailable; the SDK discards it like any
-other unverifiable response (`SignatureMissing`), and the right move is the one for any unknown outcome —
-retry a read, resume an order with the same operation id.
+The published key document, `GET /.well-known/partner-signing-keys.json`, is unsigned too, and fetched by a
+client with no verifying handler — verifying it would need the keys it is being fetched to supply. On a signed
+route, the one unsigned *answer* is the `503` the gateway sends when its own signer is unavailable; the SDK
+discards it like any other unverifiable response (`SignatureMissing`), and the right move is the one for any
+unknown outcome — retry a read, resume an order with the same operation id. The information reads never meet it:
+they do not need the signer.
 
 
-Every response is checked before you see it: the `Content-Digest` against the body, the advertised
+Every answer on a signed route is checked before you see it: the `Content-Digest` against the body, the advertised
 components against the frozen profile, the `;req` binding against the request *you* sent, the `created`
 freshness, the key against the published document, and finally the signature.
 
 The digest is compared **before** the signature — the signature covers the digest *header*, not the body,
 so checking the signature first would accept a swapped body whenever the attacker also rewrote the digest.
 
-There is no option to turn this off.
+There is no option to turn this off, and no option to turn it on for a route Anis does not sign.
 
 ## Anis's response keys rotate automatically
 

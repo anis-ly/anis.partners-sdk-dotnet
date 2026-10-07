@@ -56,8 +56,8 @@ Every refusal is printed with its code, the request id to quote, whether it was 
 UNKNOWN (with the operation id to resume) or NOT PLACED (with the refusal). An `OrderProcessing` whose status is
 `RecoveryExhausted` prints RECOVERY EXHAUSTED and still needs a resume. A call that gets no answer at all (a
 timeout or failed connection on a read, or your cancellation of an order) says so. Exit codes: `0` for a
-returned order outcome or completed read, `2` refused by Anis, `3` unverifiable read response, `4` no
-answer or caller cancellation, `1` a local error.
+returned order outcome or completed read, `2` refused by Anis, `3` unverifiable response on a route Anis signs (an
+order read, a reveal, enrolment, the self-check), `4` no answer or caller cancellation, `1` a local error.
 
 ## The order journal
 

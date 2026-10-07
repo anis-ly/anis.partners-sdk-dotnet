@@ -68,6 +68,61 @@ public sealed class ContractDriftTests
     }
 
     [Fact]
+    public void Every_route_verifies_its_answers_exactly_where_the_contract_signs_them()
+    {
+        foreach (var path in OpenApi.GetProperty("paths").EnumerateObject())
+        {
+            foreach (var operation in path.Value.EnumerateObject())
+            {
+                if (!operation.Value.TryGetProperty("x-anis-route", out var route))
+                    continue;
+
+                var actual = PartnerRoutes.All.Single(candidate =>
+                    candidate.Method == operation.Name.ToUpperInvariant() && candidate.Template == path.Name);
+
+                Assert.Equal(route.GetProperty("signsResponse").GetBoolean(), actual.SignsResponse);
+            }
+        }
+    }
+
+    [Fact]
+    public void The_signed_answers_are_exactly_the_ones_that_move_money_deliver_codes_or_establish_a_key()
+    {
+        // The owner's ruling, written out so a change to it is a change to this test and not only to a table.
+        string[] signed =
+        [
+            "POST /v1/wallets/{walletId}/orders",
+            "GET /v1/orders/{operationId}",
+            "POST /v1/wallets/{walletId}/cards/{soldCardId}/reveal",
+            "POST /v1/wallets/{walletId}/invoices/{invoiceId}/cards/reveal",
+            "GET /v1/enrollments/{invitationId}",
+            "POST /v1/enrollments/{invitationId}/keys",
+            "POST /v1/enrollments/{invitationId}/proof",
+            "GET /v1/enrollments/{invitationId}/status",
+            "POST /v1/diagnostics/signature",
+        ];
+
+        string[] unsigned =
+        [
+            "GET /v1/profile",
+            "GET /v1/wallets",
+            "GET /v1/wallets/{walletId}",
+            "GET /v1/wallets/{walletId}/catalog/categories",
+            "GET /v1/wallets/{walletId}/catalog/categories/{categoryId}/subcategories",
+            "GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}",
+            "GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}/cards",
+            "GET /v1/wallets/{walletId}/cards",
+            "GET /v1/wallets/{walletId}/cards/{soldCardId}",
+            "GET /.well-known/partner-signing-keys.json",
+        ];
+
+        static string Name(PartnerRoute route) => $"{route.Method} {route.Template}";
+
+        Assert.Equal(signed.Order(StringComparer.Ordinal), PartnerRoutes.All.Where(route => route.SignsResponse).Select(Name).Order(StringComparer.Ordinal));
+        Assert.Equal(unsigned.Order(StringComparer.Ordinal), PartnerRoutes.All.Where(route => !route.SignsResponse).Select(Name).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void Every_public_error_code_in_the_catalogue_is_known_to_the_sdk()
     {
         var published = Catalogue.GetProperty("representations").EnumerateArray()

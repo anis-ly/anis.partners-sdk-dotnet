@@ -67,9 +67,12 @@ vault-backed signer adds a network round trip there, and inside a total that cos
 see "Anis is slow" and be wrong.
 
 **`verification.failures` moving is an incident, with one known exception.** It means something between
-you and Anis altered a response, or a clock is badly out, or a key rotation went unnoticed. The exception:
-when Anis's own response signer is unavailable, the gateway answers with a deliberately unsigned `503` —
-the one response it may send unsigned — which counts here as `SignatureMissing`. A short burst of those is
+you and Anis altered a response, or a clock is badly out, or a key rotation went unnoticed. Only the routes
+whose answers Anis signs are verified — orders, order reads, the reveals, enrolment and the signature self-check —
+so only they can move it; the information reads (profile, wallets, catalogue, owned cards) are answered unsigned,
+are never verified and never count here. The exception: when Anis's own response signer is unavailable, the
+gateway answers a signed route with a deliberately unsigned `503` — the one answer it may send unsigned there —
+which counts here as `SignatureMissing`. A short burst of those is
 an Anis outage, not tampering; treat the call as "dependency unavailable" (retry a read, resume an order).
 Alert on anything else at any rate above zero.
 
@@ -85,7 +88,8 @@ nothing was sent, so nothing needs resuming. Log event 1008 names the operation 
 Order calls return those outcomes as `OrderOutcomeUnknown`. If your own token cancels the call, the SDK counts `unknown` and throws `OperationCanceledException`; resume that id when you start again.
 
 **`signing_keys.fetches` with reason `refresh`** means a response named a key version this client had not
-seen — a rotation in progress, or a client pointed at the wrong authority.
+seen — a rotation in progress, or a client pointed at the wrong authority. The first fetch happens at the first
+signed answer, not the first call: a client that has only read information has fetched nothing.
 
 ## Logs
 
@@ -97,7 +101,7 @@ and nothing can be interpolated into one by accident.
 | 1000 `RequestSigned` | Debug | a request was signed — method, path, profile, key id |
 | 1001 `RequestCompleted` | Debug | a response arrived — status, duration, request id |
 | 1002 `RequestRefused` | **Warning** | Anis refused — code, status, request id, retryable, replayed |
-| 1003 `ResponseDiscarded` | **Error** | a response could not be verified |
+| 1003 `ResponseDiscarded` | **Error** | a response on a route Anis signs could not be verified |
 | 1004 `OrderOutcome` | Information | an order completed, is processing, or was replayed |
 | 1005 `SigningKeysFetched` | Information | the key document was fetched |
 | 1006 `UnknownSigningKey` | Warning | a response named an unseen key version |

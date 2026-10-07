@@ -2,7 +2,7 @@
 
 The .NET client for the Anis Partner API. Targets **net8.0** and **net10.0**.
 
-Every request is signed, every response is verified, and the operations are typed. The parts that are easy
+Every request is signed, every answer Anis signs is verified, and the operations are typed. The parts that are easy
 to get dangerously wrong — the idempotency key, the credential-once rule, recovery after a timeout, response
 verification — are shaped so you cannot get them wrong quietly.
 
@@ -24,8 +24,10 @@ dotnet add package Anis.Partners
 
 The Anis Partner API does not use an API key. Every request is signed with **RFC 9421 HTTP Message
 Signatures** over P-256/SHA-256, the body is bound in with an **RFC 9530 `Content-Digest`**, and the
-signature must be **IEEE P1363** — the DER encoding of the same signature is refused. Every response is
-signed too, and the contract requires clients to **discard** anything they cannot verify.
+signature must be **IEEE P1363** — the DER encoding of the same signature is refused. Every answer that moves
+money, delivers card codes or establishes a key is signed too — orders, order reads, both reveals, enrolment and
+the signature self-check, the success and every refusal — and the contract requires clients to **discard** any of
+those they cannot verify. The information reads (profile, wallets, catalogue, owned cards) are answered unsigned.
 
 None of that fits an "auth provider" hook, which sets one header and never sees the method, authority,
 path, query or body bytes. All of those are signed. Get one wrong and you get a `401` with — correctly — no
@@ -122,9 +124,11 @@ line, span tag and metric tag during a reveal, an order and an enrollment and as
 serial, signature, signature base, nonce or enrollment token appears in any of them.
 
 **Response verification has no off switch.** The contract says clients discard what they cannot verify, so
-there is no option to disable it and no way to ship with it accidentally off. On reads, an unverifiable
-response raises `UnverifiableResponseException`; order calls return `OrderOutcomeUnknown`. Both discard the
-unverified content.
+there is no option to disable it and no way to ship with it accidentally off. Which answers are verified is fixed
+per route, in the SDK's route table, never guessed from the answer: a signed route's answer that arrives with no
+signature is discarded (`SignatureMissing`), and an information read's answer is returned as it arrives. On a signed
+read, an unverifiable response raises `UnverifiableResponseException`; order calls return `OrderOutcomeUnknown`. Both
+discard the unverified content.
 
 ## What is covered
 
@@ -144,7 +148,7 @@ Not "reviewed and looks right":
 | **39 response vectors** | Signed by the **gateway's production signer**. 13 the client must accept, 26 it must reject — each a single-change derivation, so a failure names the rule. They include the real repeat of a completed order (`201` + `Idempotency-Replayed`), the recovered completion, and a recorded refusal. |
 | **2 enrollment proof vectors** | The SDK builds the possession proof, and **Anis's own** proof check rebuilds the message byte for byte and accepts it; the DER form of the same signature is refused. |
 | **4 safety-code vectors** | A real key, its thumbprint, the 16-character code Anis staff ask you to read, and every way an entry may be typed (case, dashes, spaces, look-alike letters, the full thumbprint, wrong and short input), derived by an independent Python implementation. |
-| **Contract drift tests** | The route table is diffed against `contracts/partner-public-v1.json` **in both directions**, profiles included; the error codes against `contracts/error-catalogue.json`. |
+| **Contract drift tests** | The route table is diffed against `contracts/partner-public-v1.json` **in both directions**, request profiles and signed answers included; the error codes against `contracts/error-catalogue.json`. |
 | **Pipeline tests** | Every order outcome as the live gateway sends it, every refusal code, cursor paging, the body of each nonce mutation, the idempotency header, money at scale three, settings binding, several applications in one host, a host that retries every call, an order that times out, enrollment end to end, and a tampered response being discarded. |
 | **Telemetry redaction** | Every log line, span tag and metric tag captured, asserted to contain no secret — and asserted non-empty, so it cannot pass vacuously. |
 | **Python cross-checks** | Independent implementations reproduce every request base, every response verdict, every enrollment proof and every safety code — proof the contract is expressible outside .NET. |
@@ -160,10 +164,15 @@ rather than run zero vectors.
 ### Proven live
 
 On 2026-09-23 this SDK and its sample ran against a complete Anis stack: enrollment with a real key through
-staff confirmation, all 19 routes (every answer verified), twelve kinds of refusal, a staff-set orders
+staff confirmation, all 19 routes (every answer verified — before 1.4.0, when Anis still signed the information
+reads), twelve kinds of refusal, a staff-set orders
 limit, a key revoked in the middle of a run, the overlap while a key is replaced, a caller outside the
 allowed networks, and the same run on .NET 8. Four defects that no vector could see were found there and
 fixed before this version.
+
+On 2026-10-07 1.4.0 ran against a complete stack with the gateway that signs only money, card and key answers:
+enrollment through staff confirmation, the eight information reads answered unsigned and accepted, an order and its
+replay, both reveals, a signed refusal (a changed price) and an unsigned one (a wallet not granted).
 
 ### What is NOT yet proven live
 

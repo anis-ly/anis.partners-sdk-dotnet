@@ -8,8 +8,10 @@ namespace Anis.Partners.Sdk;
 
 /// <summary>The Anis Partner API.</summary>
 /// <remarks>
-/// Every call through this client is signed on the way out and verified on the way back. A response that
-/// cannot be verified is discarded and never reaches you — that is the contract, not a setting.
+/// Every call through this client is signed on the way out. On the way back, every answer Anis signs — orders,
+/// reveals and the signature self-check, success and refusal alike — is verified, and one that cannot be verified is
+/// discarded and never reaches you; that is the contract, not a setting. The information reads (profile, wallets,
+/// catalogue, owned cards) are answered unsigned and passed through as they arrive.
 /// </remarks>
 public interface IAnisPartnersClient
 {
@@ -75,7 +77,7 @@ public sealed class AnisPartnersClient : IAnisPartnersClient
         Diagnostics = new DiagnosticsOperations(transport);
     }
 
-    /// <summary>Builds a client without dependency injection: every request signed, every answer verified.</summary>
+    /// <summary>Builds a client without dependency injection: every request signed, every signed answer verified.</summary>
     /// <param name="options">The application's settings. Validated here, as <c>AddAnisPartners</c> does at startup.</param>
     /// <param name="signer">The key custody that signs every request.</param>
     /// <param name="inner">

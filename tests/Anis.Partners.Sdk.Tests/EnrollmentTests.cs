@@ -244,6 +244,32 @@ public sealed class EnrollmentTests
     }
 
     [Theory]
+    [InlineData(HttpStatusCode.OK, """{"keyId":"3f2a9c14-8d6e-4b21-9f07-5c8ab2d61e43","state":"active","approvalState":"approved"}""")]
+    [InlineData(HttpStatusCode.NotFound, """{"type":"about:blank","title":"t","status":404,"code":"invitation_invalid"}""")]
+    public async Task An_enrollment_answer_without_a_signature_is_discarded(HttpStatusCode status, string body)
+    {
+        using var responseKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        // Enrollment answers establish a key, so Anis signs every one of them — the refusal as well as the success.
+        var stub = new SignedResponseStub(responseKey, ResponseKeyId)
+        {
+            SignedAt = Now,
+            NoStore = true,
+            Unsigned = true,
+            Status = status,
+            Body = body,
+        };
+
+        using var enrollment = AnisEnrollmentClient.Create(
+            new Uri("https://partners.anis.ly"), Invitation, Token, KeysFor(responseKey), stub, new FixedClock(Now));
+
+        var failure = await Assert.ThrowsAsync<UnverifiableResponseException>(
+            () => enrollment.GetStatusAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(ResponseVerificationFailure.SignatureMissing, failure.Failure);
+    }
+
+    [Theory]
     [MemberData(nameof(Vectors))]
     public async Task The_sdk_computes_the_thumbprint_Commands_computed(string path)
     {
