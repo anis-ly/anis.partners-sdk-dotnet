@@ -184,7 +184,7 @@ internal static class Refusal
             REFUSED   {failure.RawCode} ({(int)failure.Status})  [{failure.GetType().Name}]
             request   {failure.RequestId}
             replayed  {(failure.IsReplayed ? "yes — the recorded answer of an earlier attempt with this operation id" : "no")}
-            retry     {(failure.RetryAfter is { } wait ? $"after {wait.TotalSeconds:F0}s (signed Retry-After)" : failure.IsRetryable ? "yes, with backoff" : "no")}
+            retry     {(failure.RetryAfter is { } wait ? $"after {wait.TotalSeconds:F0}s (Retry-After)" : failure.IsRetryable ? "yes, with backoff" : "no")}
             do        {Advice(failure)}
             """);
     }

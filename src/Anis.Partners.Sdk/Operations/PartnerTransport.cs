@@ -4,6 +4,7 @@ using System.Text.Json;
 using Anis.Partners.Sdk.Errors;
 using Anis.Partners.Sdk.Observability;
 using Anis.Partners.Sdk.Signing;
+using Anis.Partners.Sdk.Verification;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -17,6 +18,10 @@ namespace Anis.Partners.Sdk.Operations;
 ///
 /// The route TEMPLATE is what is tagged, never the concrete path. Tagging
 /// <c>/v1/wallets/2f1c.../orders</c> would give a metrics backend one time series per wallet.
+///
+/// Whether the answer is verified is the route's, looked up in <see cref="PartnerRoutes"/> by that same template:
+/// a route whose answers Anis does not sign is marked to skip verification here, and every other answer goes
+/// through the verifying handler.
 /// </remarks>
 internal sealed class PartnerTransport(
     Func<HttpClient> http,
@@ -49,7 +54,7 @@ internal sealed class PartnerTransport(
         return SendAsync<T>(HttpMethod.Post, route, path, SignatureProfile.BodylessNonceMutation, content, cancellationToken);
     }
 
-    /// <summary>An enrollment call: authorised by the enrollment token, not signed; the answer is still verified.</summary>
+    /// <summary>An enrollment call: authorised by the enrollment token, not signed; Anis signs the answer and the SDK verifies it.</summary>
     public Task<T> SendEnrollmentAsync<T>(HttpMethod method, string route, string path, object? body, CancellationToken cancellationToken)
         => SendAsync<T>(
             method,
@@ -70,7 +75,7 @@ internal sealed class PartnerTransport(
         using var activity = StartActivity(HttpMethod.Post, route, operationId);
         var started = Stopwatch.GetTimestamp();
 
-        using var request = Build(HttpMethod.Post, path, SignatureProfile.OrderMutation);
+        using var request = Build(HttpMethod.Post, route, path, SignatureProfile.OrderMutation);
 
         request.Options.Set(PartnerRequestOptions.IdempotencyKey, operationId);
         request.Content = JsonContent.Create(body, options: AnisJson.Options);
@@ -102,7 +107,7 @@ internal sealed class PartnerTransport(
         using var activity = StartActivity(method, route, operationId: null);
         var started = Stopwatch.GetTimestamp();
 
-        using var request = Build(method, path, profile);
+        using var request = Build(method, route, path, profile);
         request.Content = content;
 
         var (answer, bytes) = await ExchangeAsync(request, method, route, activity, started, cancellationToken).ConfigureAwait(false);
@@ -223,13 +228,20 @@ internal sealed class PartnerTransport(
         return failure;
     }
 
-    private HttpRequestMessage Build(HttpMethod method, string path, SignatureProfile? profile)
+    private HttpRequestMessage Build(HttpMethod method, string route, string path, SignatureProfile? profile)
     {
+        // Before anything is sent: a route missing from the table is a defect, not a reason to guess.
+        var entry = PartnerRoutes.Find(method, route);
         var request = new HttpRequestMessage(method, path);
 
         // No profile is an enrollment call: authorised by its token, never signed.
         if (profile is { } signed)
             request.Options.Set(PartnerRequestOptions.Profile, signed);
+
+        // An information route: Anis sends no signature, so there is nothing to verify. Set from the table only,
+        // never from what the answer turns out to carry.
+        if (!entry.SignsResponse)
+            request.Options.Set(PartnerResponseOptions.SkipVerification, true);
 
         if (options.AcceptLanguageHeader is { } language)
             request.Headers.TryAddWithoutValidation("Accept-Language", language);

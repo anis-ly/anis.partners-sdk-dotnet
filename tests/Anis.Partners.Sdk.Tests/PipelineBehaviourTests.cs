@@ -148,13 +148,14 @@ public sealed class PipelineBehaviourTests
         using var fixture = new PipelineFixture();
 
         // The stub signs whatever it is given, so signing a DIFFERENT body than it declares is the closest
-        // thing to a man in the middle: the digest no longer describes the bytes.
-        fixture.Stub.Body = """{"partner":{"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7"},"application":{"id":"16fd2706-8baf-433b-82eb-8c7fada847da","scopes":["profile:read"]}}""";
+        // thing to a man in the middle: the digest no longer describes the bytes. An order read, because its
+        // answers are signed; an information read's are not, and are not verified.
+        fixture.Stub.Body = """{"operationId":"9b2e4f17-3c6a-4d58-b0e1-7a5c8d2f6b34","status":"completed"}""";
 
         using var tampering = new TamperingHandler(fixture.Http);
 
         var failure = await Assert.ThrowsAsync<UnverifiableResponseException>(
-            () => fixture.Client.Profile.GetAsync(TestContext.Current.CancellationToken));
+            () => fixture.Client.Orders.GetAsync(Guid.Parse("9b2e4f17-3c6a-4d58-b0e1-7a5c8d2f6b34"), TestContext.Current.CancellationToken));
 
         Assert.Equal(ResponseVerificationFailure.SignatureInvalid, failure.Failure);
     }

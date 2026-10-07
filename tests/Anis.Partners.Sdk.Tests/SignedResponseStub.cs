@@ -34,6 +34,12 @@ internal sealed class SignedResponseStub(ECDsa key, string keyId) : HttpMessageH
 
     public DateTimeOffset SignedAt { get; set; } = DateTimeOffset.UnixEpoch;
 
+    /// <summary>
+    /// Answers as Anis answers an information route: <c>Content-Digest</c> and <c>X-Request-Id</c>, but no
+    /// <c>Signature</c> or <c>Signature-Input</c>.
+    /// </summary>
+    public bool Unsigned { get; set; }
+
     /// <summary>When set, the call fails with this instead of answering — a timeout or a lost connection.</summary>
     public Func<Exception>? Failure { get; set; }
 
@@ -91,6 +97,9 @@ internal sealed class SignedResponseStub(ECDsa key, string keyId) : HttpMessageH
 
         if (NoStore)
             response.Headers.TryAddWithoutValidation("Cache-Control", "no-store");
+
+        if (Unsigned)
+            return response;
 
         response.Headers.TryAddWithoutValidation(
             "Signature-Input", PartnerResponseSignatureBase.SignatureInputHeader(components, created, keyId));

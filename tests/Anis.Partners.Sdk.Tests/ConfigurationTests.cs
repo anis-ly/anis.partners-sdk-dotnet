@@ -196,10 +196,8 @@ public sealed class ConfigurationTests
         // Two Anis deployments, each signing with its own key under its own key id.
         using var keyA = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         using var keyB = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        const string Profile = """{"partner":{"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7"},"application":{"id":"16fd2706-8baf-433b-82eb-8c7fada847da","scopes":[]}}""";
-
-        var wireA = new RecordingWire(new SignedResponseStub(keyA, "deployment-a/v1") { SignedAt = DateTimeOffset.UtcNow, Body = Profile }, keyA, "deployment-a/v1");
-        var wireB = new RecordingWire(new SignedResponseStub(keyB, "deployment-b/v1") { SignedAt = DateTimeOffset.UtcNow, Body = Profile }, keyB, "deployment-b/v1");
+        var wireA = new RecordingWire(new SignedResponseStub(keyA, "deployment-a/v1") { SignedAt = DateTimeOffset.UtcNow, Body = Order }, keyA, "deployment-a/v1");
+        var wireB = new RecordingWire(new SignedResponseStub(keyB, "deployment-b/v1") { SignedAt = DateTimeOffset.UtcNow, Body = Order }, keyB, "deployment-b/v1");
 
         var services = new ServiceCollection();
 
@@ -216,8 +214,9 @@ public sealed class ConfigurationTests
 
         // Each answer verifies — which it can only do against its OWN deployment's published key: brand B's
         // key id is absent from deployment A's document, so a shared or swapped key source would discard it.
-        await factory.GetClient("brand-a").Profile.GetAsync(TestContext.Current.CancellationToken);
-        await factory.GetClient("brand-b").Profile.GetAsync(TestContext.Current.CancellationToken);
+        // An order read, because Anis signs its answers.
+        await factory.GetClient("brand-a").Orders.GetAsync(OperationId, TestContext.Current.CancellationToken);
+        await factory.GetClient("brand-b").Orders.GetAsync(OperationId, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, wireA.KeyDocumentFetches);
         Assert.Equal(1, wireB.KeyDocumentFetches);
@@ -230,7 +229,7 @@ public sealed class ConfigurationTests
         var stub = new SignedResponseStub(responseKey, ResponseKeyId)
         {
             SignedAt = DateTimeOffset.UtcNow,
-            Body = """{"partner":{"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7"},"application":{"id":"16fd2706-8baf-433b-82eb-8c7fada847da","scopes":[]}}""",
+            Body = Order,
         };
         var wire = new RecordingWire(stub, responseKey, ResponseKeyId);
         var keyId = Guid.NewGuid();
@@ -240,7 +239,7 @@ public sealed class ConfigurationTests
             NewSigner(keyId),
             wire);
 
-        await anis.Profile.GetAsync(TestContext.Current.CancellationToken);
+        await anis.Orders.GetAsync(OperationId, TestContext.Current.CancellationToken);
 
         // Signed with the given key at the given authority, and verified: the answer was only accepted after the
         // published key document was fetched once.
@@ -295,6 +294,11 @@ public sealed class ConfigurationTests
     }
 
     private const string ResponseKeyId = "partner-response-signing/v1-active";
+
+    private static readonly Guid OperationId = Guid.Parse("9b2e4f17-3c6a-4d58-b0e1-7a5c8d2f6b34");
+
+    // An order read's answer: one Anis signs, so the client must verify it.
+    private const string Order = """{"operationId":"9b2e4f17-3c6a-4d58-b0e1-7a5c8d2f6b34","status":"completed"}""";
 
     private static EcdsaP256Signer NewSigner(Guid? keyId = null)
         => EcdsaP256Signer.FromEcdsa(ECDsa.Create(ECCurve.NamedCurves.nistP256), keyId ?? Guid.NewGuid());

@@ -3,31 +3,38 @@
 Every route the SDK calls, the method that calls it, the scope it needs, and what it counts toward. The
 SDK chooses the signature profile and the body for you; they are listed so a failure can be read.
 
-| SDK call | Route | Scope | Signed as | Body | Counts toward |
-|---|---|---|---|---|---|
-| `Profile.GetAsync` | `GET /v1/profile` | `profile:read` | read | none | `requests` |
-| `Wallets.ListAsync` / `ListPageAsync` | `GET /v1/wallets` | `wallets:read` | read | none | `requests` |
-| `Wallets.GetAsync` | `GET /v1/wallets/{walletId}` | `wallets:read` | read | none | `requests` |
-| `Catalogue.ListCategoriesAsync` / `ListCategoriesPageAsync` | `GET /v1/wallets/{walletId}/catalog/categories` | `catalogue:read` | read | none | `requests` |
-| `Catalogue.ListSubcategoriesAsync` / `ListSubcategoriesPageAsync` | `GET /v1/wallets/{walletId}/catalog/categories/{categoryId}/subcategories` | `catalogue:read` | read | none | `requests` |
-| `Catalogue.GetSubcategoryAsync` | `GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}` | `catalogue:read` | read | none | `requests` |
-| `Catalogue.ListCardsAsync` / `ListCardsPageAsync` | `GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}/cards` | `catalogue:read` | read | none | `requests` |
-| `Orders.CreateAsync` / `ResumeAsync` | `POST /v1/wallets/{walletId}/orders` | `orders:create` | order | the order JSON | `requests`, `orders` |
-| `Orders.GetAsync` | `GET /v1/orders/{operationId}` | `orders:read`, or `orders:create` for this application's own orders | read | none | `requests` |
-| `OwnedCards.ListAsync` / `ListPageAsync` | `GET /v1/wallets/{walletId}/cards` | `cards:read` | read | none | `requests` |
-| `OwnedCards.GetAsync` | `GET /v1/wallets/{walletId}/cards/{soldCardId}` | `cards:read` | read | none | `requests` |
-| `OwnedCards.RevealAsync` | `POST /v1/wallets/{walletId}/cards/{soldCardId}/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | `requests`, `reveals` |
-| `OwnedCards.RevealInvoiceAsync` | `POST /v1/wallets/{walletId}/invoices/{invoiceId}/cards/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | `requests`, `reveals` |
-| `Diagnostics.CheckSignatureAsync` | `POST /v1/diagnostics/signature` | `diagnostics:use` | nonce mutation | exactly `{}` | `requests` |
-| `AnisEnrollmentClient.GetAsync` | `GET /v1/enrollments/{invitationId}` | enrollment token | — | none | — |
-| `AnisEnrollmentClient.SubmitKeyAsync` | `POST /v1/enrollments/{invitationId}/keys` | enrollment token | — | the public key | — |
-| `AnisEnrollmentClient.SubmitProofAsync` / `ProveAsync` | `POST /v1/enrollments/{invitationId}/proof` | enrollment token | — | the proof | — |
-| `AnisEnrollmentClient.GetStatusAsync` | `GET /v1/enrollments/{invitationId}/status` | enrollment token | — | none | — |
-| (response verification) | `GET /.well-known/partner-signing-keys.json` | public | — | none | — |
+| SDK call | Route | Scope | Signed as | Body | Answer | Counts toward |
+|---|---|---|---|---|---|---|
+| `Profile.GetAsync` | `GET /v1/profile` | `profile:read` | read | none | unsigned | `requests` |
+| `Wallets.ListAsync` / `ListPageAsync` | `GET /v1/wallets` | `wallets:read` | read | none | unsigned | `requests` |
+| `Wallets.GetAsync` | `GET /v1/wallets/{walletId}` | `wallets:read` | read | none | unsigned | `requests` |
+| `Catalogue.ListCategoriesAsync` / `ListCategoriesPageAsync` | `GET /v1/wallets/{walletId}/catalog/categories` | `catalogue:read` | read | none | unsigned | `requests` |
+| `Catalogue.ListSubcategoriesAsync` / `ListSubcategoriesPageAsync` | `GET /v1/wallets/{walletId}/catalog/categories/{categoryId}/subcategories` | `catalogue:read` | read | none | unsigned | `requests` |
+| `Catalogue.GetSubcategoryAsync` | `GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}` | `catalogue:read` | read | none | unsigned | `requests` |
+| `Catalogue.ListCardsAsync` / `ListCardsPageAsync` | `GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}/cards` | `catalogue:read` | read | none | unsigned | `requests` |
+| `Orders.CreateAsync` / `ResumeAsync` | `POST /v1/wallets/{walletId}/orders` | `orders:create` | order | the order JSON | **signed, verified** | `requests`, `orders` |
+| `Orders.GetAsync` | `GET /v1/orders/{operationId}` | `orders:read`, or `orders:create` for this application's own orders | read | none | **signed, verified** | `requests` |
+| `OwnedCards.ListAsync` / `ListPageAsync` | `GET /v1/wallets/{walletId}/cards` | `cards:read` | read | none | unsigned | `requests` |
+| `OwnedCards.GetAsync` | `GET /v1/wallets/{walletId}/cards/{soldCardId}` | `cards:read` | read | none | unsigned | `requests` |
+| `OwnedCards.RevealAsync` | `POST /v1/wallets/{walletId}/cards/{soldCardId}/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | **signed, verified** | `requests`, `reveals` |
+| `OwnedCards.RevealInvoiceAsync` | `POST /v1/wallets/{walletId}/invoices/{invoiceId}/cards/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | **signed, verified** | `requests`, `reveals` |
+| `Diagnostics.CheckSignatureAsync` | `POST /v1/diagnostics/signature` | `diagnostics:use` | nonce mutation | exactly `{}` | **signed, verified** | `requests` |
+| `AnisEnrollmentClient.GetAsync` | `GET /v1/enrollments/{invitationId}` | enrollment token | — | none | **signed, verified** | — |
+| `AnisEnrollmentClient.SubmitKeyAsync` | `POST /v1/enrollments/{invitationId}/keys` | enrollment token | — | the public key | **signed, verified** | — |
+| `AnisEnrollmentClient.SubmitProofAsync` / `ProveAsync` | `POST /v1/enrollments/{invitationId}/proof` | enrollment token | — | the proof | **signed, verified** | — |
+| `AnisEnrollmentClient.GetStatusAsync` | `GET /v1/enrollments/{invitationId}/status` | enrollment token | — | none | **signed, verified** | — |
+| (response verification) | `GET /.well-known/partner-signing-keys.json` | public | — | none | unsigned | — |
 
 **Signed as.** *read*: method, authority, path, query and date. *nonce mutation*: adds a `Content-Digest`
-and a one-time nonce. *order*: adds the `Idempotency-Key` (your operation id). Every response on every route
-except the key document is signed by Anis and verified by the SDK before you see it.
+and a one-time nonce. *order*: adds the `Idempotency-Key` (your operation id). Every request you send is signed,
+on every route but enrolment and the key document.
+
+**Answer.** Anis signs the answers that move money, deliver card codes or establish a key — orders, order reads,
+both reveals and enrolment — and the signature self-check: every one of them, the success and each refusal. The SDK
+verifies those before you see them and discards one it cannot verify, including one that arrives with no signature
+(`SignatureMissing`). The information reads are answered unsigned — `Content-Digest` and `X-Request-Id`, no
+`Signature` — and the SDK returns them as they arrive, refusals included, with no verification and no call for
+Anis's published keys. Which is which is fixed per route in the SDK, never decided from what an answer carries.
 
 **Body.** The two reveals send no body at all — the gateway refuses any byte there — and still sign the
 digest of the empty body. The self-check sends exactly `{}`.

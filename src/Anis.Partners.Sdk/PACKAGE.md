@@ -2,8 +2,8 @@
 
 The .NET client for the Anis Partner API, for **.NET 8** and **.NET 10**.
 
-Every request is signed (RFC 9421 over P-256), every response is verified before you see it, and the
-operations are typed. Ordering, idempotent retry, one-time card codes and recovery after a timeout are
+Every request is signed (RFC 9421 over P-256), every answer Anis signs — orders, card reveals, enrolment and the
+signature self-check — is verified before you see it, and the operations are typed. Ordering, idempotent retry, one-time card codes and recovery after a timeout are
 shaped so they cannot go wrong quietly.
 
 ```bash

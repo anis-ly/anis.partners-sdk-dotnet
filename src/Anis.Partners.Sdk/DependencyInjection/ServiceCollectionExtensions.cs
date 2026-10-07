@@ -17,9 +17,10 @@ namespace Anis.Partners.Sdk.DependencyInjection;
 /// Each application gets two HTTP clients, on purpose. The API client carries the verifying handler wrapped
 /// around the signing handler — that order matters, because after the response returns the request object
 /// still holds the <c>Signature-Input</c> the signer wrote, which is what the response's <c>;req</c> binding
-/// is rebuilt from. The key-document client carries NEITHER handler: the published key set is the one
-/// genuinely public route, it is unsigned, and verifying it would need the very keys it is being fetched to
-/// provide.
+/// is rebuilt from. The verifying handler lets an information route's unsigned answer through because the route
+/// table says so, and verifies everything else. The key-document client carries NEITHER handler: the published
+/// key set is the one genuinely public route, it is unsigned, and verifying it would need the very keys it is
+/// being fetched to provide.
 /// </remarks>
 public static class ServiceCollectionExtensions
 {

@@ -68,8 +68,8 @@ public sealed class AnisEnrollmentClient : IDisposable
 
         var clock = timeProvider ?? TimeProvider.System;
 
-        // The published key document is the one genuinely unsigned route, so it is fetched by a client with
-        // no verifying handler — verifying it would need the keys it is being fetched to supply.
+        // The published key document is unsigned, so it is fetched by a client with no verifying handler —
+        // verifying it would need the keys it is being fetched to supply.
         var keyClient = new HttpClient { BaseAddress = authority };
         var keys = new HttpSigningKeySource(keyClient, TimeSpan.FromMinutes(10), clock);
 

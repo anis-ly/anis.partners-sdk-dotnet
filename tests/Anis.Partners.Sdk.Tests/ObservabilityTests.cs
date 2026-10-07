@@ -112,11 +112,11 @@ public sealed class ObservabilityTests
         using var capture = new TelemetryCapture();
         using var fixture = new PipelineFixture(capture.Loggers);
 
-        fixture.Stub.Body = """{"partner":{"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7"},"application":{"id":"16fd2706-8baf-433b-82eb-8c7fada847da","scopes":[]}}""";
+        fixture.Stub.Body = $$"""{"operationId":"{{Operation:D}}","status":"completed"}""";
         fixture.Stub.SignedAt = PipelineFixture.Now.AddHours(-2);   // far outside the freshness window
 
         await Assert.ThrowsAsync<UnverifiableResponseException>(
-            () => fixture.Client.Profile.GetAsync(TestContext.Current.CancellationToken));
+            () => fixture.Client.Orders.GetAsync(Operation, TestContext.Current.CancellationToken));
 
         var failure = Assert.Single(capture.Measurements, m => m.Instrument == "anis.partners.response.verification.failures");
 

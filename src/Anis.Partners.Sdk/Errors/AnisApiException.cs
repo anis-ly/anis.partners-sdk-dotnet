@@ -17,10 +17,10 @@ namespace Anis.Partners.Sdk.Errors;
 /// </remarks>
 public class AnisApiException : Exception
 {
-    /// <summary>Builds the exception from a parsed problem and the covered response headers.</summary>
-    /// <param name="problem">The signed problem body.</param>
+    /// <summary>Builds the exception from a parsed problem and the semantic response headers.</summary>
+    /// <param name="problem">The problem body — verified, on a route Anis signs.</param>
     /// <param name="status">The HTTP status.</param>
-    /// <param name="retryAfter">The signed <c>Retry-After</c>, when the refusal carried one.</param>
+    /// <param name="retryAfter">The <c>Retry-After</c>, when the refusal carried one.</param>
     /// <param name="isReplayed">Whether the refusal carried the signed <c>Idempotency-Replayed: true</c>.</param>
     public AnisApiException(Problem problem, HttpStatusCode status, TimeSpan? retryAfter = null, bool isReplayed = false)
         : base(BuildMessage(problem, status, isReplayed))
@@ -53,7 +53,7 @@ public class AnisApiException : Exception
     /// <summary>The permanent documentation page for this code.</summary>
     public string? TypeUri => Problem.Type;
 
-    /// <summary>The signed <c>Retry-After</c>, when the refusal carried one.</summary>
+    /// <summary>The <c>Retry-After</c>, when the refusal carried one. Covered by the signature on a route Anis signs.</summary>
     public TimeSpan? RetryAfter { get; }
 
     /// <summary>
@@ -301,7 +301,7 @@ internal static class AnisApiExceptionFactory
 {
     private const string IdempotencyReplayedHeader = "Idempotency-Replayed";
 
-    /// <summary>Reads the problem and the covered semantic headers of a verified refusal.</summary>
+    /// <summary>Reads the problem and the semantic headers of a refusal — verified, on a route Anis signs.</summary>
     public static AnisApiException Create(byte[] body, HttpResponseMessage response, JsonSerializerOptions options)
     {
         ArgumentNullException.ThrowIfNull(response);
@@ -322,8 +322,8 @@ internal static class AnisApiExceptionFactory
         }
         catch (JsonException)
         {
-            // A signed response whose body is not a problem is still a refusal. Inventing a code would be
-            // worse than saying so.
+            // A refusal whose body is not a problem is still a refusal. Inventing a code would be worse than
+            // saying so.
             problem = Fallback(status);
         }
 
@@ -358,7 +358,7 @@ internal static class AnisApiExceptionFactory
         };
     }
 
-    /// <summary>The signed <c>Retry-After</c> in seconds, when present.</summary>
+    /// <summary>The <c>Retry-After</c> in seconds, when present; covered by the signature on a route Anis signs.</summary>
     public static TimeSpan? RetryAfterOf(HttpResponseMessage response)
         => response.Headers.RetryAfter?.Delta
            ?? (response.Headers.TryGetValues("Retry-After", out var values)
@@ -366,7 +366,7 @@ internal static class AnisApiExceptionFactory
                    ? TimeSpan.FromSeconds(seconds)
                    : null);
 
-    /// <summary>A verified success whose body is JSON <c>null</c>: there is nothing to read, and that is not a value.</summary>
+    /// <summary>A success whose body is JSON <c>null</c>: there is nothing to read, and that is not a value.</summary>
     public static AnisApiException EmptyBody(HttpStatusCode status) => new(
         new Problem { Type = "about:blank", Title = "Empty body", Status = (int)status, Code = "internal_error" },
         status);

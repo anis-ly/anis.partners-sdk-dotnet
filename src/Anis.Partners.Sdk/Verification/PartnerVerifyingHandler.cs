@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Anis.Partners.Sdk.Verification;
 
-/// <summary>Verifies every signed response, and discards any it cannot verify.</summary>
+/// <summary>Verifies every answer on a route Anis signs, and discards any it cannot verify.</summary>
 /// <remarks>
 /// Wraps the signing handler, so by the time a response comes back the request object already carries the
 /// <c>Signature-Input</c> this client sent — which is exactly what the <c>;req</c> binding needs.
@@ -14,8 +14,11 @@ namespace Anis.Partners.Sdk.Verification;
 /// a cost worth avoiding: an unbuffered stream cannot be verified, and an unverified response must not be
 /// read.
 ///
-/// The public signing-key route is the one response that carries no signature; it is fetched by a client
-/// that does not have this handler.
+/// The information routes answer unsigned, and the request says so (<see cref="PartnerResponseOptions.SkipVerification"/>,
+/// set from the route table). Their answer is passed through untouched — no digest check either: a
+/// <c>Content-Digest</c> nothing signs is vouched for by nobody, since whoever could change the body could change the
+/// digest with it, so checking it would add a way to fail and no protection. TLS is what protects those answers, as it
+/// protects the public signing-key document, which is fetched by a client that does not have this handler.
 /// </remarks>
 internal sealed class PartnerVerifyingHandler(PartnerResponseVerifier verifier) : DelegatingHandler
 {
@@ -28,8 +31,9 @@ internal sealed class PartnerVerifyingHandler(PartnerResponseVerifier verifier) 
 
         var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
-        // The public key document is the one unsigned branch; it opts out explicitly rather than being detected, so a
-        // signed route can never silently take the unsigned path. Enrollment answers are verified like any other.
+        // An unsigned route opts out explicitly, from the route table, rather than being detected: a signed route whose
+        // answer arrives without a signature is refused below, never waved through. A signature that turns up on an
+        // unsigned route is not checked either, because nothing about that route depends on it.
         if (request.Options.TryGetValue(PartnerResponseOptions.SkipVerification, out var skip) && skip)
             return response;
 
@@ -68,8 +72,9 @@ internal sealed class PartnerVerifyingHandler(PartnerResponseVerifier verifier) 
 internal static class PartnerResponseOptions
 {
     /// <summary>
-    /// Set on the one genuinely unsigned branch: the public key document. Every other answer — enrollment answers
-    /// included — is verified, and there is no configuration switch that turns that off.
+    /// Set on the routes whose answers Anis does not sign: by the transport for the information routes, from the route
+    /// table, and by the key source for the public key document. Every other answer — orders, reveals, the self-check
+    /// and enrollment — is verified, and there is no configuration switch that turns that off.
     /// </summary>
     public static readonly HttpRequestOptionsKey<bool> SkipVerification = new("anis.partners.skip-verification");
 }
