@@ -9,12 +9,15 @@ namespace Anis.Partners.Sdk;
 /// <summary>The Anis Partner API.</summary>
 /// <remarks>
 /// Every call through this client is signed on the way out. On the way back, every answer Anis signs — orders,
-/// reveals and the signature self-check, success and refusal alike — is verified, and one that cannot be verified is
+/// reveals, access stops and the signature self-check, success and refusal alike — is verified, and one that cannot be verified is
 /// discarded and never reaches you; that is the contract, not a setting. The information reads (profile, wallets,
 /// catalogue, owned cards) are answered unsigned and passed through as they arrive.
 /// </remarks>
 public interface IAnisPartnersClient
 {
+    /// <summary>Suspending this application and revoking its keys.</summary>
+    IAccessOperations Access { get; }
+
     /// <summary>This application's identity and the scopes its current policy grants.</summary>
     IProfileOperations Profile { get; }
 
@@ -69,6 +72,7 @@ public sealed class AnisPartnersClient : IAnisPartnersClient
 
         var transport = new PartnerTransport(http, options, loggers.CreateLogger<PartnerTransport>());
 
+        Access = new AccessOperations(transport);
         Profile = new ProfileOperations(transport);
         Wallets = new WalletOperations(transport);
         Catalogue = new CatalogueOperations(transport);
@@ -128,6 +132,9 @@ public sealed class AnisPartnersClient : IAnisPartnersClient
 
         return new AnisPartnersClient(api, options, loggerFactory);
     }
+
+    /// <inheritdoc/>
+    public IAccessOperations Access { get; }
 
     /// <inheritdoc/>
     public IProfileOperations Profile { get; }

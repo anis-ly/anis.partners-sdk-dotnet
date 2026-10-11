@@ -25,9 +25,22 @@ public interface IWalletOperations
     Task<Wallet> GetAsync(Guid walletId, CancellationToken cancellationToken = default);
 }
 
+/// <summary>Stopping access to this application or one of its keys.</summary>
+public interface IAccessOperations
+{
+    /// <summary>Suspends this application. No scope is required; resumption is staff-only.</summary>
+    Task<ApplicationSuspended> SuspendApplicationAsync(string reason, CancellationToken cancellationToken = default);
+
+    /// <summary>Revokes a key belonging to this application. No scope is required; revocation is terminal.</summary>
+    Task<KeyRevoked> RevokeKeyAsync(Guid keyId, string reason, CancellationToken cancellationToken = default);
+}
+
 /// <summary>The published catalogue, priced for one wallet.</summary>
 public interface ICatalogueOperations
 {
+    /// <summary>One catalogue card with this wallet's price.</summary>
+    Task<CatalogueCard> GetCardAsync(Guid walletId, Guid cardId, CancellationToken cancellationToken = default);
+
     /// <summary>Every category, following the cursor for you.</summary>
     IAsyncEnumerable<CatalogueCategory> ListCategoriesAsync(Guid walletId, CancellationToken cancellationToken = default);
 
@@ -149,8 +162,35 @@ internal sealed class WalletOperations(PartnerTransport transport) : IWalletOper
         => transport.GetAsync<Wallet>("/v1/wallets/{walletId}", $"v1/wallets/{walletId:D}", SignatureProfile.SafeRead, cancellationToken);
 }
 
+internal sealed class AccessOperations(PartnerTransport transport) : IAccessOperations
+{
+    public Task<ApplicationSuspended> SuspendApplicationAsync(string reason, CancellationToken cancellationToken = default)
+        => transport.PostNonceMutationAsync<ApplicationSuspended, AccessStopRequest>(
+            "/v1/application/suspend", "v1/application/suspend", StopRequest(reason), cancellationToken);
+
+    public Task<KeyRevoked> RevokeKeyAsync(Guid keyId, string reason, CancellationToken cancellationToken = default)
+        => transport.PostNonceMutationAsync<KeyRevoked, AccessStopRequest>(
+            "/v1/keys/{keyId}/revoke", $"v1/keys/{keyId:D}/revoke", StopRequest(reason), cancellationToken);
+
+    private static AccessStopRequest StopRequest(string reason)
+    {
+        ArgumentNullException.ThrowIfNull(reason);
+        var trimmed = reason.Trim();
+
+        if (trimmed.Length is < 1 or > 500)
+            throw new ArgumentException("The stop reason must contain 1 to 500 characters after trimming.", nameof(reason));
+
+        return new AccessStopRequest { Reason = trimmed };
+    }
+}
+
 internal sealed class CatalogueOperations(PartnerTransport transport) : ICatalogueOperations
 {
+    public Task<CatalogueCard> GetCardAsync(Guid walletId, Guid cardId, CancellationToken cancellationToken = default)
+        => transport.GetAsync<CatalogueCard>(
+            "/v1/wallets/{walletId}/catalog/cards/{cardId}",
+            $"v1/wallets/{walletId:D}/catalog/cards/{cardId:D}", SignatureProfile.SafeRead, cancellationToken);
+
     public async IAsyncEnumerable<CatalogueCategory> ListCategoriesAsync(Guid walletId, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         string? cursor = null;
@@ -240,17 +280,17 @@ internal sealed class OwnedCardOperations(PartnerTransport transport) : IOwnedCa
 
     public Task<Page<MaskedCard>> ListPageAsync(Guid walletId, string? cursor, CancellationToken cancellationToken = default)
         => transport.GetAsync<Page<MaskedCard>>(
-            "/v1/wallets/{walletId}/cards",
-            Routes.Append($"v1/wallets/{walletId:D}/cards", cursor), SignatureProfile.SafeRead, cancellationToken);
+            "/v1/wallets/{walletId}/owned-cards",
+            Routes.Append($"v1/wallets/{walletId:D}/owned-cards", cursor), SignatureProfile.SafeRead, cancellationToken);
 
     public Task<MaskedCard> GetAsync(Guid walletId, Guid soldCardId, CancellationToken cancellationToken = default)
-        => transport.GetAsync<MaskedCard>("/v1/wallets/{walletId}/cards/{soldCardId}", $"v1/wallets/{walletId:D}/cards/{soldCardId:D}", SignatureProfile.SafeRead, cancellationToken);
+        => transport.GetAsync<MaskedCard>("/v1/wallets/{walletId}/owned-cards/{soldCardId}", $"v1/wallets/{walletId:D}/owned-cards/{soldCardId:D}", SignatureProfile.SafeRead, cancellationToken);
 
     public Task<RevealedCredential> RevealAsync(Guid walletId, Guid soldCardId, CancellationToken cancellationToken = default)
-        => transport.PostWithoutBodyAsync<RevealedCredential>("/v1/wallets/{walletId}/cards/{soldCardId}/reveal", $"v1/wallets/{walletId:D}/cards/{soldCardId:D}/reveal", cancellationToken);
+        => transport.PostWithoutBodyAsync<RevealedCredential>("/v1/wallets/{walletId}/owned-cards/{soldCardId}/reveal", $"v1/wallets/{walletId:D}/owned-cards/{soldCardId:D}/reveal", cancellationToken);
 
     public Task<RevealedCredentialCollection> RevealInvoiceAsync(Guid walletId, Guid invoiceId, CancellationToken cancellationToken = default)
-        => transport.PostWithoutBodyAsync<RevealedCredentialCollection>("/v1/wallets/{walletId}/invoices/{invoiceId}/cards/reveal", $"v1/wallets/{walletId:D}/invoices/{invoiceId:D}/cards/reveal", cancellationToken);
+        => transport.PostWithoutBodyAsync<RevealedCredentialCollection>("/v1/wallets/{walletId}/invoices/{invoiceId}/owned-cards/reveal", $"v1/wallets/{walletId:D}/invoices/{invoiceId:D}/owned-cards/reveal", cancellationToken);
 }
 
 internal sealed class DiagnosticsOperations(PartnerTransport transport) : IDiagnosticsOperations

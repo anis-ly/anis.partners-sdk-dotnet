@@ -1,13 +1,15 @@
 # Anis.Partners
 
+Version **2.0.0**. **1.x is deprecated — upgrade.**
+
 The .NET client for the Anis Partner API, for **.NET 8** and **.NET 10**.
 
-Every request is signed (RFC 9421 over P-256), every answer Anis signs — orders, card reveals, enrolment and the
+Every request is signed (RFC 9421 over P-256), every answer Anis signs — orders, card reveals, access stops, enrolment and the
 signature self-check — is verified before you see it, and the operations are typed. Ordering, idempotent retry, one-time card codes and recovery after a timeout are
 shaped so they cannot go wrong quietly.
 
 ```bash
-dotnet add package Anis.Partners
+dotnet add package Anis.Partners --version 2.0.0
 ```
 
 ```csharp
@@ -30,6 +32,7 @@ Then inject `IAnisPartnersClient` and call it:
 
 ```csharp
 var profile = await client.Profile.GetAsync(cancellationToken);
+var card = await client.Catalogue.GetCardAsync(walletId, cardId, cancellationToken);
 ```
 
 ## Documentation

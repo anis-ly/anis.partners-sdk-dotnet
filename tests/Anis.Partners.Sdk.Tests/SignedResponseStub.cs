@@ -7,10 +7,9 @@ namespace Anis.Partners.Sdk.Tests;
 
 /// <summary>An inner handler that answers with a correctly signed Partner response.</summary>
 /// <remarks>
-/// It signs using the SDK's own response base builder. That is legitimate here and only here: the base
-/// builder is independently proven against 33 vectors produced by the GATEWAY's signer, so a test built on
-/// it exercises the pipeline — handler order, body freezing, request binding, deserialization — rather
-/// than re-testing the thing it depends on.
+/// It signs using the SDK's own response base builder to exercise the pipeline: handler order, body
+/// freezing, request binding and deserialization. Response verification tests render signatures independently,
+/// and the conformance suite compares the verifier with the gateway's signed vectors.
 /// </remarks>
 internal sealed class SignedResponseStub(ECDsa key, string keyId) : HttpMessageHandler
 {
@@ -69,6 +68,7 @@ internal sealed class SignedResponseStub(ECDsa key, string keyId) : HttpMessageH
             digest,
             RequestId,
             request.Headers.TryGetValues("Signature-Input", out var sent) ? string.Join(", ", sent) : null,
+            request.Headers.TryGetValues("Signature", out var signatureHeader) ? string.Join(", ", signatureHeader) : null,
             Location,
             RetryAfterSeconds?.ToString(System.Globalization.CultureInfo.InvariantCulture),
             IdempotencyReplayed ? "true" : null,

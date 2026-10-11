@@ -27,8 +27,10 @@ internal sealed class PipelineFixture : IDisposable
             {
                 Keys =
                 [
-                    new PartnerJwk
+                    new PublishedSigningKey
                     {
+                        Status = "active",
+                        NotBefore = Now.AddDays(-1),
                         Kty = "EC",
                         Crv = "P-256",
                         Kid = ResponseKeyId,

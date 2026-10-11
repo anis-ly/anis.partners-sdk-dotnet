@@ -57,7 +57,7 @@ One base type plus a small set of subclasses for the refusals callers actually b
 
 `malformed_signed_request` (400) means the signed request was badly built — a signature header missing or unreadable, the signed parts not the ones the route needs or not in its order, or a `Content-Digest` that cannot be read or does not describe the body. The SDK builds these itself, so with the SDK it points at something between you and Anis rewriting the request (a proxy that changes headers or the body). It is decided before any key is looked at and says nothing about your key. On an order it comes back as `OrderOutcomeUnknown` (suggested delay 60 seconds): fix what rewrites the request, then resume the same id — never a new one. `signature_expired` and `invalid_content_digest` are in the catalogue — and in `PartnerErrorCode` — but Anis does not send them: an expired signature arrives as `invalid_credentials`, a digest that does not describe the body as `malformed_signed_request`.
 
-All 37 public codes are in `PartnerErrorCode`, generated from the error catalogue, and a test pins every one
+All 38 public codes are in `PartnerErrorCode`, generated from the error catalogue, and a test pins every one
 of them to its exception type and its order outcome. A code this SDK version does not know arrives as
 `PartnerErrorCode.Unknown`, with its wire spelling in `RawCode`. On an order, a refusal marked replayed returns
 `OrderNotPlaced`; otherwise it returns `OrderOutcomeUnknown`, requiring a resume with the same operation id.
@@ -114,7 +114,7 @@ vault outage does not look like an Anis outage.
 ## A response you cannot verify is not an error — it is discarded
 
 Only the routes whose answers Anis signs can end this way: orders, order reads, both reveals, enrolment and the
-signature self-check. The information reads — profile, wallets, catalogue, owned cards — are answered unsigned and
+signature self-check and access stops. The information reads — profile, wallets, catalogue, owned cards — are answered unsigned and
 never verified, so their refusals always arrive as the `AnisApiException` types above.
 
 For a signed read, catch the verification exception:
@@ -123,7 +123,8 @@ For a signed read, catch the verification exception:
 catch (UnverifiableResponseException failure)
 {
     // failure.Failure names the rule: ContentDigestMismatch, SignatureInvalid,
-    // CoveredComponentsMismatch, UnknownKey, KeyRejected, CreatedOutOfWindow, SignatureMissing, ...
+    // CoveredComponentsMismatch, UnknownKey, KeyRejected, CreatedOutOfWindow, SignatureMissing,
+    // ProfileUnexpected, KeyCompromised, KeyRetired, KeyNotYetValid, ...
 }
 ```
 
@@ -139,3 +140,12 @@ response signer is unavailable, the gateway answers a signed route with a delibe
 
 On an **order**, an unverifiable response comes back as `OrderOutcomeUnknown`: resume with the same operation id.
 On a read, retry.
+
+For response verification, `ProfileUnexpected` means the required `anis-response-v2` tag is missing or differs.
+`KeyCompromised` means the response names a revoked signing key; `KeyRetired` means it was signed after that key's
+retirement; `KeyNotYetValid` means it was signed before a next key's activation. The complete closed vocabulary is
+in [Security](security.md).
+
+Access stops report `validation_failed` (400) for an invalid reason, `resource_not_found` (404) for an unknown or
+foreign key and `key_not_revocable` (409, `AnisApiException`) for a retired key. An already-revoked key returns 200
+with its current state. The SDK rejects an empty or overlong reason locally before sending.

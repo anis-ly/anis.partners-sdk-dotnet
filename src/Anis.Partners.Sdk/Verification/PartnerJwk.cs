@@ -2,12 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Anis.Partners.Sdk.Verification;
 
-/// <summary>One public key from <c>GET /.well-known/partner-signing-keys.json</c>.</summary>
-/// <remarks>
-/// The document publishes the active, next and retiring versions at once, because a Partner has to verify
-/// a response received a moment before a rotation and pre-load the key it will need a moment after one.
-/// Any published version may verify; only the gateway decides which one signs.
-/// </remarks>
+/// <summary>A public P-256 key for enrollment and thumbprint computation.</summary>
 public sealed record PartnerJwk
 {
     /// <summary>Always <c>EC</c>.</summary>
@@ -45,6 +40,9 @@ public sealed record PartnerJwk
 /// <summary>The body of the published signing-key document.</summary>
 public sealed record PartnerSigningKeySet
 {
-    /// <summary>Active, next and retiring, in that order.</summary>
-    [JsonPropertyName("keys")] public IReadOnlyList<PartnerJwk> Keys { get; init; } = [];
+    /// <summary>Active, next and retired response-signing keys.</summary>
+    [JsonPropertyName("keys")] public IReadOnlyList<PublishedSigningKey> Keys { get; init; } = [];
+
+    /// <summary>Compromised response-signing keys, refused regardless of their signing time.</summary>
+    [JsonPropertyName("revoked")] public IReadOnlyList<RevokedSigningKey> Revoked { get; init; } = [];
 }

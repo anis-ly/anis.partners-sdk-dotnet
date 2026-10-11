@@ -78,7 +78,7 @@
         }
       }
     },
-    "/v1/wallets/{walletId}/cards": {
+    "/v1/wallets/{walletId}/owned-cards": {
       "get": {
         "x-anis-route": {
           "requestKind": "safeRead",
@@ -86,7 +86,7 @@
         }
       }
     },
-    "/v1/wallets/{walletId}/cards/{soldCardId}": {
+    "/v1/wallets/{walletId}/owned-cards/{soldCardId}": {
       "get": {
         "x-anis-route": {
           "requestKind": "safeRead",
@@ -94,7 +94,7 @@
         }
       }
     },
-    "/v1/wallets/{walletId}/cards/{soldCardId}/reveal": {
+    "/v1/wallets/{walletId}/owned-cards/{soldCardId}/reveal": {
       "post": {
         "x-anis-route": {
           "requestKind": "bodylessNonceMutation",
@@ -102,7 +102,7 @@
         }
       }
     },
-    "/v1/wallets/{walletId}/invoices/{invoiceId}/cards/reveal": {
+    "/v1/wallets/{walletId}/invoices/{invoiceId}/owned-cards/reveal": {
       "post": {
         "x-anis-route": {
           "requestKind": "bodylessNonceMutation",
@@ -154,6 +154,30 @@
       "get": {
         "x-anis-route": {
           "requestKind": "public",
+          "signsResponse": false
+        }
+      }
+    },
+    "/v1/application/suspend": {
+      "post": {
+        "x-anis-route": {
+          "requestKind": "bodylessNonceMutation",
+          "signsResponse": true
+        }
+      }
+    },
+    "/v1/keys/{keyId}/revoke": {
+      "post": {
+        "x-anis-route": {
+          "requestKind": "bodylessNonceMutation",
+          "signsResponse": true
+        }
+      }
+    },
+    "/v1/wallets/{walletId}/catalog/cards/{cardId}": {
+      "get": {
+        "x-anis-route": {
+          "requestKind": "safeRead",
           "signsResponse": false
         }
       }

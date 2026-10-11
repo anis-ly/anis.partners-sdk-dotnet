@@ -8,7 +8,7 @@ namespace Anis.Partners.Sdk.Verification;
 /// <summary>Verifies every answer on a route Anis signs, and discards any it cannot verify.</summary>
 /// <remarks>
 /// Wraps the signing handler, so by the time a response comes back the request object already carries the
-/// <c>Signature-Input</c> this client sent — which is exactly what the <c>;req</c> binding needs.
+/// <c>Signature-Input</c> and raw <c>Signature</c> this client sent — which is exactly what the <c>;req</c> binding needs.
 ///
 /// The body is buffered before verification because the digest is taken over the whole of it. That is not
 /// a cost worth avoiding: an unbuffered stream cannot be verified, and an unverified response must not be
@@ -52,7 +52,8 @@ internal sealed class PartnerVerifyingHandler(PartnerResponseVerifier verifier) 
                 (int)response.StatusCode,
                 headers,
                 body,
-                request.Headers.TryGetValues("Signature-Input", out var sent) ? string.Join(", ", sent) : null),
+                request.Headers.TryGetValues("Signature-Input", out var sent) ? string.Join(", ", sent) : null,
+                request.Headers.TryGetValues("Signature", out var signature) ? string.Join(", ", signature) : null),
             cancellationToken).ConfigureAwait(false);
 
         // Re-attach the verified bytes so the caller reads exactly what was verified, not a second read of
@@ -73,7 +74,7 @@ internal static class PartnerResponseOptions
 {
     /// <summary>
     /// Set on the routes whose answers Anis does not sign: by the transport for the information routes, from the route
-    /// table, and by the key source for the public key document. Every other answer — orders, reveals, the self-check
+    /// table, and by the key source for the public key document. Every other answer — orders, reveals, access stops, the self-check
     /// and enrollment — is verified, and there is no configuration switch that turns that off.
     /// </summary>
     public static readonly HttpRequestOptionsKey<bool> SkipVerification = new("anis.partners.skip-verification");

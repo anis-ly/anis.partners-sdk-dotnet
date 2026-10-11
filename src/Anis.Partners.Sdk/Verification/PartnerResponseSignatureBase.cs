@@ -23,7 +23,7 @@ internal static class PartnerResponseSignatureBase
     public const string Algorithm = "ecdsa-p256-sha256";
 
     /// <summary>The frozen profile name the gateway records on response evidence.</summary>
-    public const string Profile = "partner-response-v1";
+    public const string Profile = "anis-response-v2";
 
     /// <summary>
     /// How far a response's <c>created</c> may sit from the client's clock.
@@ -44,6 +44,7 @@ internal static class PartnerResponseSignatureBase
         string contentDigest,
         string requestId,
         string? requestSignatureInput,
+        string? requestSignature,
         string? location,
         string? retryAfter,
         string? idempotencyReplayed,
@@ -58,8 +59,11 @@ internal static class PartnerResponseSignatureBase
 
         // Omitted rather than covered as an empty string on the enrollment branch, which carries no
         // request signature at all. A base naming a component with no value verifies against nothing.
-        if (!string.IsNullOrEmpty(requestSignatureInput))
-            components.Add(new("signature-input", requestSignatureInput, RequestBound: true));
+        if (!string.IsNullOrEmpty(requestSignature))
+        {
+            components.Add(new("signature-input", requestSignatureInput ?? string.Empty, RequestBound: true));
+            components.Add(new("signature", requestSignature, RequestBound: true));
+        }
 
         Add(components, "location", location);
         Add(components, "retry-after", retryAfter);
@@ -77,7 +81,8 @@ internal static class PartnerResponseSignatureBase
         return $"({string.Join(' ', components.Select(component => component.Identifier))})"
             + $";created={created.ToString(CultureInfo.InvariantCulture)}"
             + $";keyid=\"{keyId}\""
-            + $";alg=\"{Algorithm}\"";
+            + $";alg=\"{Algorithm}\""
+            + $";tag=\"{Profile}\"";
     }
 
     /// <summary>The full <c>Signature-Input</c> header value this response should carry.</summary>

@@ -23,17 +23,7 @@ public sealed class RequestVectorTests
     {
         get
         {
-            var directory = Path.Combine(AppContext.BaseDirectory, "vectors", "request");
-
-            var files = Directory.Exists(directory)
-                ? Directory.GetFiles(directory, "RQ-*.json").Order(StringComparer.Ordinal).ToArray()
-                : [];
-
-            // Running zero vectors and reporting green is the one outcome this suite must never produce.
-            Assert.True(
-                files.Length > 0,
-                $"No request vectors were found under {directory}. The conformance corpus is missing: check "
-                + "the ConformanceVectors property, or the vectors folder beside the tests.");
+            var files = VectorFiles.List("request", "RQ-*.json");
 
             var data = new TheoryData<string>();
 

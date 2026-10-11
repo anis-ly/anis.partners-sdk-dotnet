@@ -35,9 +35,9 @@ is a fully isolated copy with its own authority, keys and data. Which one you ta
 An SDK-level environment switch would be one line that repoints production traffic, which is exactly the
 line somebody edits by accident.
 
-## Every answer that moves money, delivers codes or establishes a key is verified
+## Signed answers are verified
 
-Anis signs the answers of nine routes, and only those: placing an order, reading an order, revealing a card,
+Anis signs the answers of eleven routes: suspending the application, revoking a key, placing an order, reading an order, revealing a card,
 revealing an invoice's cards, the four enrolment routes, and the signature self-check. On those routes **every**
 answer is signed — the success and each refusal, including a refusal raised before the route's own code runs (a
 rate limit, a malformed request, an access refusal). The SDK verifies each one before you see it and discards one it
@@ -89,7 +89,7 @@ they do not need the signer.
 
 
 Every answer on a signed route is checked before you see it: the `Content-Digest` against the body, the advertised
-components against the frozen profile, the `;req` binding against the request *you* sent, the `created`
+components and `tag="anis-response-v2"` against the frozen profile, the `;req` binding against the request *you* sent, the `created`
 freshness, the key against the published document, and finally the signature.
 
 The digest is compared **before** the signature — the signature covers the digest *header*, not the body,
@@ -99,7 +99,7 @@ There is no option to turn this off, and no option to turn it on for a route Ani
 
 ## Anis's response keys rotate automatically
 
-The published document carries the active, next and retiring versions at once, so a response received just
+The published document carries the active, next and retired versions at once, so a response received just
 before a rotation still verifies just after one. The SDK caches it for `SigningKeyCacheDuration` and
 refreshes **once immediately** on a `keyid` it does not know, which is the ordinary signal that a rotation
 happened. A document carrying a private member is rejected whole — not just that key.
@@ -110,16 +110,51 @@ once, each named by `kid` (`x` and `y` are abbreviated here):
 ```json
 {
   "keys": [
-    { "kty": "EC", "crv": "P-256", "kid": "partner-response-signing/4d1a2c9e8b7f4e6a9c0d1b2e3f4af3e2", "use": "sig", "alg": "ES256", "x": "…", "y": "…" },
-    { "kty": "EC", "crv": "P-256", "kid": "partner-response-signing/a07e5b3c1d2f4c8e9b6a0f1e2d3c9b41", "use": "sig", "alg": "ES256", "x": "…", "y": "…" }
+    { "kty": "EC", "crv": "P-256", "kid": "partner-signing/active", "use": "sig", "alg": "ES256", "x": "…", "y": "…", "status": "active", "notBefore": "2026-10-08T00:00:00Z" },
+    { "kty": "EC", "crv": "P-256", "kid": "partner-signing/next", "use": "sig", "alg": "ES256", "x": "…", "y": "…", "status": "next", "notBefore": "2026-10-12T00:00:00Z" },
+    { "kty": "EC", "crv": "P-256", "kid": "partner-signing/retired", "use": "sig", "alg": "ES256", "x": "…", "y": "…", "status": "retired", "notBefore": "2026-10-01T00:00:00Z", "retiredAt": "2026-10-08T00:00:00Z" }
+  ],
+  "revoked": [
+    { "kid": "partner-signing/compromised", "compromisedAt": "2026-10-11T09:00:00Z" }
   ]
 }
 ```
 
-An answer names its key in `Signature-Input` (`keyid="partner-response-signing/4d1a2c9e8b7f4e6a9c0d1b2e3f4af3e2"`), and the SDK matches it
+An answer names its key in `Signature-Input` (`keyid="partner-signing/active"`), and the SDK matches it
 to a `kid` exactly — the order of the entries means nothing to it. If you supply your own `ISigningKeySource`, keep
-every entry of the document, not only the first: an answer signed moments before or after a rotation names one of
+every entry of both `Keys` and `Revoked`, including each key's lifecycle metadata, not only the first key: an answer signed moments before or after a rotation names one of
 the others.
+
+The v2 response list is rebuilt in this exact order: `"@status"`, `"content-digest"`, `"x-request-id"`,
+`"signature-input";req`, `"signature";req`, then any nonempty `location`, `retry-after`, `idempotency-replayed`,
+`cache-control`. Both request components are absent on enrollment/public requests. The signature component is the
+raw request header value (`sig1=:…:`), never decoded or re-encoded. Parameters end with
+`;created=<unix>;keyid="<kid>";alg="ecdsa-p256-sha256";tag="anis-response-v2"`.
+
+A `kid` in `revoked[]` is always refused, regardless of `compromisedAt` or whether it also appears in `keys[]`.
+A retired key is refused when signature `created` is strictly after `retiredAt`; a next key is refused when
+`created` is strictly before `notBefore`. Equality at either boundary is accepted. Retired keys remain published
+for 24 hours after retirement and compromised ids for 90 days. These rules use signature creation, not fetch time.
+Enrollment's `PartnerJwk` stays separate from the response-only `PublishedSigningKey`.
+
+The closed failure vocabulary (`ResponseVerificationFailure`) is:
+
+| Wire reason | .NET value |
+|---|---|
+| `signature_missing` | `SignatureMissing` |
+| `signature_malformed` | `SignatureMalformed` |
+| `signature_invalid` | `SignatureInvalid` |
+| `content_digest_mismatch` | `ContentDigestMismatch` |
+| `covered_components_mismatch` | `CoveredComponentsMismatch` |
+| `unknown_key` | `UnknownKey` |
+| `key_rejected` | `KeyRejected` |
+| `algorithm_not_supported` | `AlgorithmNotSupported` |
+| `label_unexpected` | `LabelUnexpected` |
+| `created_out_of_window` | `CreatedOutOfWindow` |
+| `profile_unexpected` | `ProfileUnexpected` |
+| `key_compromised` | `KeyCompromised` |
+| `key_retired` | `KeyRetired` |
+| `key_not_yet_valid` | `KeyNotYetValid` |
 
 ## Your request keys: rotation and revocation
 
@@ -131,8 +166,13 @@ When the overlap ends, the old key is refused with `invalid_credentials` by itse
 key also has an end date (`EnrollmentStatus.KeyExpiresAt`): ask for its replacement weeks before it.
 
 A revoked key is refused on every route with `401 invalid_credentials`, exactly like an unknown key, from
-the moment staff revoke it. Revoking a key you no longer use does not affect your current one. To sign again after your
+the moment staff or your application revoke it. Revoking a key you no longer use does not affect your current one. To sign again after your
 current key is revoked, ask for a new invitation and enrol a new key.
+
+You can stop your own application with `Access.SuspendApplicationAsync(reason)` or revoke one of its keys with
+`Access.RevokeKeyAsync(keyId, reason)`. No scope is required for either admitted request. Their JSON reason is
+trimmed and must contain 1–500 characters. Suspension requires Anis staff to resume; a revoked key cannot be
+restored. Every stop emails the technical contact, and a partner-initiated stop also alerts Anis staff.
 
 ## Do not log credentials
 

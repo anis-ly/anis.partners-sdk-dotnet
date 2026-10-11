@@ -130,8 +130,8 @@ public sealed class PriceChangedException(Problem problem, HttpStatusCode status
     : AnisApiException(problem, status, retryAfter, isReplayed);
 
 /// <summary>
-/// The card cannot be sold in this quantity: sold out, not enough stock, outside the card's own minimum or
-/// maximum, no longer offered, or an unknown card. Nothing was charged; the order is closed.
+/// The card cannot be sold in this quantity: sold out, not enough stock, outside the platform quantity range of 1 to
+/// 100, no longer offered, or an unknown card. Nothing was charged; the order is closed.
 /// </summary>
 /// <remarks>
 /// Covers <c>quantity_unavailable</c> and <c>card_unavailable</c>. Re-read the catalogue (it reports

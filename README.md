@@ -1,5 +1,7 @@
 # Anis.Partners — .NET SDK
 
+Version **2.0.0**. **1.x is deprecated — upgrade.**
+
 The .NET client for the Anis Partner API. Targets **net8.0** and **net10.0**.
 
 Every request is signed, every answer Anis signs is verified, and the operations are typed. The parts that are easy
@@ -7,7 +9,7 @@ to get dangerously wrong — the idempotency key, the credential-once rule, reco
 verification — are shaped so you cannot get them wrong quietly.
 
 ```bash
-dotnet add package Anis.Partners
+dotnet add package Anis.Partners --version 2.0.0
 ```
 
 - [Getting started](docs/getting-started.md) — enrollment, registration (one application or several), first call
@@ -25,7 +27,8 @@ dotnet add package Anis.Partners
 The Anis Partner API does not use an API key. Every request is signed with **RFC 9421 HTTP Message
 Signatures** over P-256/SHA-256, the body is bound in with an **RFC 9530 `Content-Digest`**, and the
 signature must be **IEEE P1363** — the DER encoding of the same signature is refused. Every answer that moves
-money, delivers card codes or establishes a key is signed too — orders, order reads, both reveals, enrolment and
+money, delivers card codes or establishes or stops access is signed too — orders, order reads, both reveals,
+access stops, enrolment and
 the signature self-check, the success and every refusal — and the contract requires clients to **discard** any of
 those they cannot verify. The information reads (profile, wallets, catalogue, owned cards) are answered unsigned.
 
@@ -58,9 +61,35 @@ await foreach (var wallet in anis.Wallets.ListAsync(ct))       // cursor paging,
 await foreach (var card in anis.Catalogue.ListCardsAsync(walletId, subcategoryId, ct))   // every page, followed for you
     Console.WriteLine($"{card.Name?.En} {card.UnitPrice}");
 
+var catalogueCard = await anis.Catalogue.GetCardAsync(walletId, cardId, ct);
+var ownedCard = await anis.OwnedCards.GetAsync(walletId, soldCardId, ct);
+Console.WriteLine($"{ownedCard.SoldCardId} {ownedCard.Card?.FaceValue} {ownedCard.Card?.Category?.Name?.En}");
+
 var credential  = await anis.OwnedCards.RevealAsync(walletId, soldCardId, ct);
 var credentials = await anis.OwnedCards.RevealInvoiceAsync(walletId, invoiceId, ct); // all or none, max 100
 ```
+
+To stop access, supply a required reason (1–500 characters after trimming). These calls need no scope and
+verify their signed answers. Resumption is staff-only; revocation is terminal.
+
+```csharp
+var suspended = await anis.Access.SuspendApplicationAsync("Pause while investigating an incident", ct);
+```
+
+To revoke one key while the application is admitted:
+
+```csharp
+var revoked = await anis.Access.RevokeKeyAsync(keyId, "Key exposed", ct);
+```
+
+`MaskedCard` uses `SoldCardId` and `OperationId`; product details are in `CardSummary` (`Card`). The same summary
+appears in reveals and order `SoldCards`. Catalogue cards include `Logo` and `Category`; subcategory lists include
+`Description`. Wallet currency is `Balance.Currency`. All amounts use `Money`, a nonnegative decimal string at
+scale three with an uppercase three-letter currency. Owned-card routes use `/owned-cards`.
+
+Signed answers require `tag="anis-response-v2"` and bind both request signature headers. The verifier refuses
+compromised keys, signatures after a key's retirement and signatures before a next key's activation. See
+[Security](docs/security.md) for the closed verification failure vocabulary.
 
 Buying is deliberately less convenient — see [Orders and recovery](docs/orders-and-recovery.md):
 
@@ -132,7 +161,7 @@ discard the unverified content.
 
 ## What is covered
 
-All 19 published routes, in six operation groups — `Profile`, `Wallets`, `Catalogue`, `Orders`,
+All 22 published routes, in seven operation groups — `Access`, `Profile`, `Wallets`, `Catalogue`, `Orders`,
 `OwnedCards`, `Diagnostics` — plus `AnisEnrollmentClient` for bootstrap. 38 public error codes, generated
 from the error catalogue, each pinned by a test to its exception type and its order outcome. The signature
 self-check (`Diagnostics`) needs `diagnostics:use` and is the right first call when a signature will not
@@ -144,10 +173,10 @@ Not "reviewed and looks right":
 
 | Evidence | What it holds |
 |---|---|
-| **9 request vectors** | The SDK signs, then **Anis's own** parser, base builder and verifier run over the result. A vector exists only if Anis rebuilt a **byte-identical** base and accepted the signature. They also record the body each nonce mutation sends — zero bytes on a reveal, `{}` on the self-check — a rule the **gateway** enforces, so the live run is its proof. |
-| **39 response vectors** | Signed by the **gateway's production signer**. 13 the client must accept, 26 it must reject — each a single-change derivation, so a failure names the rule. They include the real repeat of a completed order (`201` + `Idempotency-Replayed`), the recovered completion, and a recorded refusal. |
-| **2 enrollment proof vectors** | The SDK builds the possession proof, and **Anis's own** proof check rebuilds the message byte for byte and accepts it; the DER form of the same signature is refused. |
-| **4 safety-code vectors** | A real key, its thumbprint, the 16-character code Anis staff ask you to read, and every way an entry may be typed (case, dashes, spaces, look-alike letters, the full thumbprint, wrong and short input), derived by an independent Python implementation. |
+| **Request vectors** | The SDK signs, then **Anis's own** parser, base builder and verifier run over the result. A vector exists only if Anis rebuilt a **byte-identical** base and accepted the signature. They also record the body each nonce mutation sends — zero bytes on a reveal, `{}` on the self-check — a rule the **gateway** enforces, so the live run is its proof. |
+| **Response vectors** | Signed by the **gateway's production signer**. Accept and reject cases — each rejection a single-change derivation, so a failure names the rule. They include the real repeat of a completed order (`201` + `Idempotency-Replayed`), the recovered completion, and a recorded refusal. |
+| **Enrollment proof vectors** | The SDK builds the possession proof, and **Anis's own** proof check rebuilds the message byte for byte and accepts it; the DER form of the same signature is refused. |
+| **Safety-code vectors** | A real key, its thumbprint, the 16-character code Anis staff ask you to read, and every way an entry may be typed (case, dashes, spaces, look-alike letters, the full thumbprint, wrong and short input), derived by an independent Python implementation. |
 | **Contract drift tests** | The route table is diffed against `contracts/partner-public-v1.json` **in both directions**, request profiles and signed answers included; the error codes against `contracts/error-catalogue.json`. |
 | **Pipeline tests** | Every order outcome as the live gateway sends it, every refusal code, cursor paging, the body of each nonce mutation, the idempotency header, money at scale three, settings binding, several applications in one host, a host that retries every call, an order that times out, enrollment end to end, and a tampered response being discarded. |
 | **Telemetry redaction** | Every log line, span tag and metric tag captured, asserted to contain no secret — and asserted non-empty, so it cannot pass vacuously. |
@@ -159,7 +188,8 @@ dotnet test Anis.Partners.Sdk.slnx      # on net8.0 AND net10.0
 
 The suites read the vectors from `tests/Anis.Partners.Sdk.Tests/vectors` — the same published set as
 <https://developers.anis.ly/vectors/index.json> (override with `-p:ConformanceVectors=<path>`) — and fail loudly
-rather than run zero vectors.
+rather than run zero vectors. Group manifests, when present, determine the expected inventory; no vector count is
+hard-coded. The response corpus requires regeneration for the v2 profile before its conformance gate can pass.
 
 ### Proven live
 
@@ -175,6 +205,8 @@ enrollment through staff confirmation, the eight information reads answered unsi
 replay, both reveals, a signed refusal (a changed price) and an unsigned one (a wallet not granted).
 
 ### What is NOT yet proven live
+
+Version 2.0.0 has no live certification from this lane; the dated runs above cover 1.x.
 
 - **Orders whose outcome is unknown** — a `202` still processing, a timeout, an owner-side outage, the
   recovered completion. They cannot be provoked by hand on a healthy stack; they are covered by Anis's
