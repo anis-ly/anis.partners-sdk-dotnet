@@ -63,6 +63,9 @@ public sealed class ErrorMappingTests
         // A badly built signed request: with the SDK, something rewrote it on its way, possibly on a resend.
         ["malformed_signed_request"] = (typeof(AnisApiException), OrderRefusalOutcome.Unknown),
 
+        // Access stops.
+        ["key_not_revocable"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+
         // Reveals.
         ["reveal_not_allowed"] = (typeof(AuthorizationException), OrderRefusalOutcome.NotPlaced),
         ["invoice_reveal_limit_exceeded"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),

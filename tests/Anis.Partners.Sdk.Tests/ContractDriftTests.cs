@@ -86,15 +86,17 @@ public sealed class ContractDriftTests
     }
 
     [Fact]
-    public void The_signed_answers_are_exactly_the_ones_that_move_money_deliver_codes_or_establish_a_key()
+    public void The_signed_answers_are_exactly_the_security_sensitive_routes()
     {
         // The owner's ruling, written out so a change to it is a change to this test and not only to a table.
         string[] signed =
         [
+            "POST /v1/application/suspend",
+            "POST /v1/keys/{keyId}/revoke",
             "POST /v1/wallets/{walletId}/orders",
             "GET /v1/orders/{operationId}",
-            "POST /v1/wallets/{walletId}/cards/{soldCardId}/reveal",
-            "POST /v1/wallets/{walletId}/invoices/{invoiceId}/cards/reveal",
+            "POST /v1/wallets/{walletId}/owned-cards/{soldCardId}/reveal",
+            "POST /v1/wallets/{walletId}/invoices/{invoiceId}/owned-cards/reveal",
             "GET /v1/enrollments/{invitationId}",
             "POST /v1/enrollments/{invitationId}/keys",
             "POST /v1/enrollments/{invitationId}/proof",
@@ -107,12 +109,13 @@ public sealed class ContractDriftTests
             "GET /v1/profile",
             "GET /v1/wallets",
             "GET /v1/wallets/{walletId}",
+            "GET /v1/wallets/{walletId}/catalog/cards/{cardId}",
             "GET /v1/wallets/{walletId}/catalog/categories",
             "GET /v1/wallets/{walletId}/catalog/categories/{categoryId}/subcategories",
             "GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}",
             "GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}/cards",
-            "GET /v1/wallets/{walletId}/cards",
-            "GET /v1/wallets/{walletId}/cards/{soldCardId}",
+            "GET /v1/wallets/{walletId}/owned-cards",
+            "GET /v1/wallets/{walletId}/owned-cards/{soldCardId}",
             "GET /.well-known/partner-signing-keys.json",
         ];
 
@@ -193,6 +196,7 @@ public sealed class ContractDriftTests
             [PartnerErrorCode.WalletExpired] = 35,
             [PartnerErrorCode.WalletNotGranted] = 36,
             [PartnerErrorCode.MalformedSignedRequest] = 37,
+            [PartnerErrorCode.KeyNotRevocable] = 38,
         };
 
         Assert.All(released, pair => Assert.Equal(pair.Value, (int)pair.Key));

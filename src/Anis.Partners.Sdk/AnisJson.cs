@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using Anis.Partners.Sdk.Models;
 
 namespace Anis.Partners.Sdk;
 
@@ -18,5 +20,20 @@ internal static class AnisJson
         // The surface names every member explicitly with [JsonPropertyName]; leaving the policy null keeps
         // that the single source of the wire spelling.
         PropertyNamingPolicy = null,
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver
+        {
+            Modifiers = { OmitEmptyText },
+        },
     };
+    private static void OmitEmptyText(JsonTypeInfo type)
+    {
+        foreach (var property in type.Properties)
+        {
+            if (property.PropertyType == typeof(string))
+                property.ShouldSerialize = (_, value) => value is string text && text.Length > 0;
+            else if (property.PropertyType == typeof(LocalizedText))
+                property.ShouldSerialize = (_, value) => value is LocalizedText text
+                    && (!string.IsNullOrEmpty(text.Ar) || !string.IsNullOrEmpty(text.En));
+        }
+    }
 }

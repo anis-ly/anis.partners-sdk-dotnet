@@ -16,9 +16,6 @@ public sealed record Wallet
     /// <summary>Display name.</summary>
     [JsonPropertyName("name")] public string? Name { get; init; }
 
-    /// <summary>Currency code.</summary>
-    [JsonPropertyName("currency")] public string? Currency { get; init; }
-
     /// <summary>Reserved-adjusted balance, with the instant it was computed.</summary>
     [JsonPropertyName("balance")] public Money Balance { get; init; }
 }

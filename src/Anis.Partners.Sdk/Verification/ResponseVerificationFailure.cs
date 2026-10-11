@@ -21,7 +21,7 @@ public enum ResponseVerificationFailure
     /// <summary>The <c>keyid</c> names a version absent from the published document.</summary>
     UnknownKey = 6,
 
-    /// <summary>The published document carries a private member and is refused as a whole.</summary>
+    /// <summary>The published key is invalid, has invalid lifecycle metadata, or the document carries a private member.</summary>
     KeyRejected = 7,
 
     /// <summary>The <c>alg</c> parameter is not the one supported algorithm.</summary>
@@ -32,4 +32,16 @@ public enum ResponseVerificationFailure
 
     /// <summary>The <c>created</c> parameter is outside the freshness window.</summary>
     CreatedOutOfWindow = 10,
+
+    /// <summary>The response does not carry <c>tag="anis-response-v2"</c>.</summary>
+    ProfileUnexpected = 11,
+
+    /// <summary>The signing key is listed as compromised in the published document.</summary>
+    KeyCompromised = 12,
+
+    /// <summary>The response was signed after its key retired.</summary>
+    KeyRetired = 13,
+
+    /// <summary>The response was signed before its next key becomes valid.</summary>
+    KeyNotYetValid = 14,
 }

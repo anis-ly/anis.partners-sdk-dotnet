@@ -28,13 +28,7 @@ public sealed class EnrollmentTests
     {
         get
         {
-            var directory = Path.Combine(AppContext.BaseDirectory, "vectors", "enrollment");
-
-            var files = Directory.Exists(directory)
-                ? Directory.GetFiles(directory, "EP-*.json").Order(StringComparer.Ordinal).ToArray()
-                : [];
-
-            Assert.True(files.Length > 0, $"No enrollment proof vectors were found under {directory}.");
+            var files = VectorFiles.List("enrollment", "EP-*.json");
 
             return new TheoryData<string>(files);
         }
@@ -429,7 +423,7 @@ public sealed class EnrollmentTests
 
         return new StaticSigningKeySource(new PartnerSigningKeySet
         {
-            Keys = [new PartnerJwk { Kty = "EC", Crv = "P-256", Kid = ResponseKeyId, X = Encode(point.X!), Y = Encode(point.Y!) }],
+            Keys = [new PublishedSigningKey { Status = "active", NotBefore = Now.AddDays(-1), Kty = "EC", Crv = "P-256", Kid = ResponseKeyId, X = Encode(point.X!), Y = Encode(point.Y!) }],
         });
     }
 

@@ -28,6 +28,8 @@ internal sealed class PartnerTransport(
     AnisPartnersClientOptions options,
     ILogger<PartnerTransport>? logger = null)
 {
+    private const string UserAgent = "Anis.Partners/2.0.0";
+
     private readonly ILogger _logger = logger ?? NullLogger<PartnerTransport>.Instance;
 
     /// <summary>The name the application was registered under.</summary>
@@ -53,6 +55,11 @@ internal sealed class PartnerTransport(
 
         return SendAsync<T>(HttpMethod.Post, route, path, SignatureProfile.BodylessNonceMutation, content, cancellationToken);
     }
+
+    /// <summary>An access stop: a nonce mutation with a JSON body covered by its digest.</summary>
+    public Task<T> PostNonceMutationAsync<T, TBody>(string route, string path, TBody body, CancellationToken cancellationToken)
+        => SendAsync<T>(HttpMethod.Post, route, path, SignatureProfile.BodylessNonceMutation,
+            JsonContent.Create(body, options: AnisJson.Options), cancellationToken);
 
     /// <summary>An enrollment call: authorised by the enrollment token, not signed; Anis signs the answer and the SDK verifies it.</summary>
     public Task<T> SendEnrollmentAsync<T>(HttpMethod method, string route, string path, object? body, CancellationToken cancellationToken)
@@ -233,6 +240,7 @@ internal sealed class PartnerTransport(
         // Before anything is sent: a route missing from the table is a defect, not a reason to guess.
         var entry = PartnerRoutes.Find(method, route);
         var request = new HttpRequestMessage(method, path);
+        request.Headers.UserAgent.ParseAdd(UserAgent);
 
         // No profile is an enrollment call: authorised by its token, never signed.
         if (profile is { } signed)

@@ -106,6 +106,12 @@ public sealed record CatalogueCard
     /// <summary>Printed face value, when the card has one.</summary>
     [JsonPropertyName("faceValue")] public string? FaceValue { get; init; }
 
+    /// <summary>The subcategory's absolute logo URL.</summary>
+    [JsonPropertyName("logo")] public string? Logo { get; init; }
+
+    /// <summary>The category the card belongs to.</summary>
+    [JsonPropertyName("category")] public CardClassification? Category { get; init; }
+
     /// <summary>
     /// The price THIS wallet pays for one card now — the one an order is checked against. Send it as
     /// <c>expectedUnitPrice</c>. Absent when the card cannot be sold to this wallet.
@@ -132,14 +138,12 @@ public sealed record CatalogueCard
     [JsonPropertyName("available")] public bool Available { get; init; }
 
     /// <summary>
-    /// The fewest of this card one order may carry. Check it before you order: a quantity below it is refused.
-    /// If it is above <see cref="MaximumQuantity"/> the card cannot be bought at all.
+    /// The platform minimum quantity: always one.
     /// </summary>
     [JsonPropertyName("minimumQuantity")] public int? MinimumQuantity { get; init; }
 
     /// <summary>
-    /// The most of this card one order may carry — the card's own limit or Anis's order cap, whichever is lower.
-    /// Check it before you order: a quantity above it is refused.
+    /// The platform order limit: 100 cards.
     /// </summary>
     [JsonPropertyName("maximumQuantity")] public int? MaximumQuantity { get; init; }
 }

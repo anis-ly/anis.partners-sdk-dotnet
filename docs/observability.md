@@ -68,7 +68,7 @@ see "Anis is slow" and be wrong.
 
 **`verification.failures` moving is an incident, with one known exception.** It means something between
 you and Anis altered a response, or a clock is badly out, or a key rotation went unnoticed. Only the routes
-whose answers Anis signs are verified — orders, order reads, the reveals, enrolment and the signature self-check —
+whose answers Anis signs are verified — orders, order reads, the reveals, access stops, enrolment and the signature self-check —
 so only they can move it; the information reads (profile, wallets, catalogue, owned cards) are answered unsigned,
 are never verified and never count here. The exception: when Anis's own response signer is unavailable, the
 gateway answers a signed route with a deliberately unsigned `503` — the one answer it may send unsigned there —

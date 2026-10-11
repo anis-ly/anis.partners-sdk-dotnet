@@ -36,6 +36,15 @@ internal sealed class SampleCommands(IAnisPartnersClient anis, ISigningKeySource
     public async Task CardsAsync(Guid walletId, Guid subcategoryId, CancellationToken ct)
         => Show(await anis.Catalogue.ListCardsPageAsync(walletId, subcategoryId, cursor: null, ct));
 
+    public async Task CatalogueCardAsync(Guid walletId, Guid cardId, CancellationToken ct)
+        => Show(await anis.Catalogue.GetCardAsync(walletId, cardId, ct));
+
+    public async Task SuspendApplicationAsync(string reason, CancellationToken ct)
+        => Show(await anis.Access.SuspendApplicationAsync(reason, ct));
+
+    public async Task RevokeKeyAsync(Guid keyId, string reason, CancellationToken ct)
+        => Show(await anis.Access.RevokeKeyAsync(keyId, reason, ct));
+
     public async Task OwnedCardsAsync(Guid walletId, CancellationToken ct)
     {
         await foreach (var card in anis.OwnedCards.ListAsync(walletId, ct))
@@ -162,7 +171,11 @@ internal sealed class SampleCommands(IAnisPartnersClient anis, ISigningKeySource
                 var subcategory = subcategories.Items[0].Id;
 
                 await Step("subcategory", () => SubcategoryAsync(wallet.Id, subcategory, ct));
-                await Step("cards with this wallet's price", () => CardsAsync(wallet.Id, subcategory, ct));
+                var cards = await anis.Catalogue.ListCardsPageAsync(wallet.Id, subcategory, cursor: null, ct);
+                Section("cards with this wallet's price");
+                Show(cards);
+                if (cards.Items.Count > 0)
+                    await Step("one catalogue card", () => CatalogueCardAsync(wallet.Id, cards.Items[0].Id, ct));
             }
         }
 
@@ -178,7 +191,7 @@ internal sealed class SampleCommands(IAnisPartnersClient anis, ISigningKeySource
         });
 
         if (owned is not null)
-            await Step("one owned card", () => OwnedCardAsync(wallet.Id, owned.Id, ct));
+            await Step("one owned card", () => OwnedCardAsync(wallet.Id, owned.SoldCardId, ct));
 
         await Step("signature self-check", () => DiagnosticAsync(ct));
         await Step("published signing keys", () => SigningKeysAsync(ct));

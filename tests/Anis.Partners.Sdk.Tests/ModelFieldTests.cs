@@ -3,9 +3,9 @@ using Anis.Partners.Sdk.Models;
 
 namespace Anis.Partners.Sdk.Tests;
 
-/// <summary>The members added in 1.2.0 read from the wire as the contract spells them, and stay null when Anis omits them.</summary>
+/// <summary>Card and order members read from the wire as the contract spells them, and optional members stay null when omitted.</summary>
 /// <remarks>
-/// Every addition is optional on the wire, so an older answer (or a card that has no expiry) must still read cleanly:
+/// Optional members on the wire, such as a card's expiry, must read cleanly when absent:
 /// absent means null here, never a default that could be mistaken for a value.
 /// </remarks>
 public sealed class ModelFieldTests
@@ -29,10 +29,10 @@ public sealed class ModelFieldTests
     [Fact]
     public void A_catalogue_card_reads_its_quantity_limits()
     {
-        var card = Read<CatalogueCard>("""{"id":"8d4b1e73-9a25-4c60-8f37-6b2e9d5a1c48","minimumQuantity":2,"maximumQuantity":50}""");
+        var card = Read<CatalogueCard>("""{"id":"8d4b1e73-9a25-4c60-8f37-6b2e9d5a1c48","minimumQuantity":1,"maximumQuantity":100}""");
 
-        Assert.Equal(2, card.MinimumQuantity);
-        Assert.Equal(50, card.MaximumQuantity);
+        Assert.Equal(1, card.MinimumQuantity);
+        Assert.Equal(100, card.MaximumQuantity);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class ModelFieldTests
     }
 
     [Fact]
-    public void An_order_without_the_new_members_leaves_them_null()
+    public void An_order_with_optional_members_absent_leaves_them_null()
     {
         var order = Read<Order>("""{"operationId":"9b2e4f17-3c6a-4d58-b0e1-7a5c8d2f6b34","status":"completed"}""");
 
@@ -84,7 +84,7 @@ public sealed class ModelFieldTests
     }
 
     [Fact]
-    public void A_revealed_credential_without_the_new_members_leaves_them_null()
+    public void A_revealed_credential_with_optional_members_absent_leaves_them_null()
     {
         var credential = Read<RevealedCredential>("""{"soldCardId":"4a6c2e81-7b39-4d15-a2f8-3e7b9c1d5046","voucher":"1234"}""");
 
@@ -99,29 +99,118 @@ public sealed class ModelFieldTests
     {
         var card = Read<MaskedCard>(
             """
-            {"id":"4a6c2e81-7b39-4d15-a2f8-3e7b9c1d5046","credentialAvailable":false,
+            {"soldCardId":"4a6c2e81-7b39-4d15-a2f8-3e7b9c1d5046","operationId":"9b2e4f17-3c6a-4d58-b0e1-7a5c8d2f6b34","credentialAvailable":false,
              "unitPrice":{"amount":"10.500","currency":"LYD"},"expiryDate":"2027-03-31","invoiceNumber":1042,
-             "faceValue":"10 USD","subcategory":{"id":"7a1c3e5f-2b4d-4f68-8a0c-9e1b3d5f7a2c","name":{"ar":"فئة","en":"Games"}}}
+             "card":{"id":"8d4b1e73-9a25-4c60-8f37-6b2e9d5a1c48","faceValue":"10 USD","subcategory":{"id":"7a1c3e5f-2b4d-4f68-8a0c-9e1b3d5f7a2c","name":{"ar":"فئة","en":"Games"}},"logo":"https://assets.anis.ly/card.png","category":{"id":"6e3b9d27-1f84-4a5c-b0d6-8c2e7f4a9b13","name":{"en":"Local"}}}}
             """);
 
         Assert.Equal(new Money(10.500m, "LYD"), card.UnitPrice);
         Assert.Equal(new DateOnly(2027, 3, 31), card.ExpiryDate);
         Assert.Equal(1042, card.InvoiceNumber);
-        Assert.Equal("10 USD", card.FaceValue);
-        Assert.Equal(Guid.Parse("7a1c3e5f-2b4d-4f68-8a0c-9e1b3d5f7a2c"), card.Subcategory?.Id);
-        Assert.Equal("Games", card.Subcategory?.Name?.En);
+        Assert.Equal("10 USD", card.Card?.FaceValue);
+        Assert.Equal(Guid.Parse("7a1c3e5f-2b4d-4f68-8a0c-9e1b3d5f7a2c"), card.Card?.Subcategory?.Id);
+        Assert.Equal("Games", card.Card?.Subcategory?.Name?.En);
         Assert.False(card.CredentialAvailable);
+        Assert.Equal(Guid.Parse("4a6c2e81-7b39-4d15-a2f8-3e7b9c1d5046"), card.SoldCardId);
+        Assert.Equal(Guid.Parse("9b2e4f17-3c6a-4d58-b0e1-7a5c8d2f6b34"), card.OperationId);
+        Assert.Equal("https://assets.anis.ly/card.png", card.Card?.Logo);
+        Assert.Equal("Local", card.Card?.Category?.Name?.En);
     }
 
     [Fact]
-    public void A_masked_card_without_the_new_members_leaves_them_null()
+    public void A_masked_card_with_optional_members_absent_leaves_them_null()
     {
-        var card = Read<MaskedCard>("""{"id":"4a6c2e81-7b39-4d15-a2f8-3e7b9c1d5046","credentialAvailable":true}""");
+        var card = Read<MaskedCard>("""{"soldCardId":"4a6c2e81-7b39-4d15-a2f8-3e7b9c1d5046","operationId":"9b2e4f17-3c6a-4d58-b0e1-7a5c8d2f6b34","credentialAvailable":true}""");
 
         Assert.Null(card.UnitPrice);
         Assert.Null(card.ExpiryDate);
         Assert.Null(card.InvoiceNumber);
-        Assert.Null(card.FaceValue);
-        Assert.Null(card.Subcategory);
+        Assert.Null(card.Card?.FaceValue);
+        Assert.Null(card.Card?.Subcategory);
     }
+
+    [Fact]
+    public void A_catalogue_card_reads_its_logo_and_category()
+    {
+        var card = Read<CatalogueCard>("""{"id":"8d4b1e73-9a25-4c60-8f37-6b2e9d5a1c48","logo":"https://assets.anis.ly/card.png","category":{"id":"6e3b9d27-1f84-4a5c-b0d6-8c2e7f4a9b13","name":{"en":"Local"}}}""");
+        Assert.Equal("https://assets.anis.ly/card.png", card.Logo);
+        Assert.Equal("Local", card.Category?.Name?.En);
+    }
+
+    [Fact]
+    public void A_subcategory_list_item_reads_its_description()
+    {
+        var page = Read<Page<CatalogueSubcategory>>("""{"items":[{"id":"7a1c3e5f-2b4d-4f68-8a0c-9e1b3d5f7a2c","description":{"en":"Games"}}]}""");
+        Assert.Equal("Games", Assert.Single(page.Items).Description?.En);
+    }
+
+    [Fact]
+    public void Order_sold_cards_carry_the_full_revealed_credential()
+    {
+        var order = Read<Order>("""
+            {"operationId":"9b2e4f17-3c6a-4d58-b0e1-7a5c8d2f6b34","status":"completed","soldCards":[
+             {"soldCardId":"4a6c2e81-7b39-4d15-a2f8-3e7b9c1d5046","serialNumber":"serial","voucher":"secret",
+              "revealedAt":"2026-09-19T08:00:00Z","expiryDate":"2027-03-31","invoiceId":"c1a7e2d9-5b64-4f18-9e03-2d7a6c4b8f51",
+              "purchasedAt":"2026-09-19T08:00:00Z","card":{"id":"8d4b1e73-9a25-4c60-8f37-6b2e9d5a1c48","faceValue":"10 USD",
+               "logo":"https://assets.anis.ly/card.png","subcategory":{"id":"7a1c3e5f-2b4d-4f68-8a0c-9e1b3d5f7a2c","name":{"en":"Games"}},
+               "category":{"id":"6e3b9d27-1f84-4a5c-b0d6-8c2e7f4a9b13","name":{"en":"Local"}}}}]}
+            """);
+        var credential = Assert.Single(order.SoldCards!);
+        Assert.Equal("serial", credential.SerialNumber);
+        Assert.Equal("secret", credential.Voucher);
+        Assert.Equal(PipelineFixture.Now, credential.RevealedAt);
+        Assert.Equal(PipelineFixture.Now, credential.PurchasedAt);
+        Assert.Equal(new DateOnly(2027, 3, 31), credential.ExpiryDate);
+        Assert.Equal(Guid.Parse("c1a7e2d9-5b64-4f18-9e03-2d7a6c4b8f51"), credential.InvoiceId);
+        Assert.Equal("10 USD", credential.Card?.FaceValue);
+        Assert.Equal("https://assets.anis.ly/card.png", credential.Card?.Logo);
+        Assert.Equal("Games", credential.Card?.Subcategory?.Name?.En);
+        Assert.Equal("Local", credential.Card?.Category?.Name?.En);
+    }
+
+    [Fact]
+    public void Card_and_wallet_models_have_only_the_v2_wire_members()
+    {
+        static string[] Members<T>() => typeof(T).GetProperties()
+            .Select(property => property.GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonPropertyNameAttribute), false)
+                .Cast<System.Text.Json.Serialization.JsonPropertyNameAttribute>().Single().Name)
+            .Order(StringComparer.Ordinal).ToArray();
+        Assert.Equal(new[] { "soldCardId", "operationId", "invoiceId", "invoiceNumber", "card", "serialNumberMasked", "credentialAvailable", "purchasedAt", "unitPrice", "expiryDate" }.Order(StringComparer.Ordinal), Members<MaskedCard>());
+        Assert.Equal(new[] { "id", "name", "faceValue", "logo", "subcategory", "category" }.Order(StringComparer.Ordinal), Members<CardSummary>());
+        Assert.Equal(new[] { "soldCardId", "serialNumber", "voucher", "revealedAt", "expiryDate", "invoiceId", "card", "purchasedAt" }.Order(StringComparer.Ordinal), Members<RevealedCredential>());
+        Assert.Equal(new[] { "id", "name", "balance" }.Order(StringComparer.Ordinal), Members<Wallet>());
+    }
+
+    [Fact]
+    public void Empty_strings_and_localized_text_are_omitted()
+    {
+        var json = JsonSerializer.Serialize(new CardSummary
+        {
+            Logo = "", FaceValue = "", Name = new LocalizedText { Ar = "", En = "" },
+            Category = new CardClassification { Name = new LocalizedText { Ar = "", En = "Local" } },
+        }, AnisJson.Options);
+        using var document = JsonDocument.Parse(json);
+        Assert.False(document.RootElement.TryGetProperty("logo", out _));
+        Assert.False(document.RootElement.TryGetProperty("faceValue", out _));
+        Assert.False(document.RootElement.TryGetProperty("name", out _));
+        var name = document.RootElement.GetProperty("category").GetProperty("name");
+        Assert.False(name.TryGetProperty("ar", out _));
+        Assert.Equal("Local", name.GetProperty("en").GetString());
+    }
+
+    [Theory]
+    [InlineData("{\"amount\":\"-1.000\",\"currency\":\"LYD\"}")]
+    [InlineData("{\"amount\":\"1.00\",\"currency\":\"LYD\"}")]
+    [InlineData("{\"amount\":1.000,\"currency\":\"LYD\"}")]
+    [InlineData("{\"amount\":\"1.000\",\"currency\":\"lyd\"}")]
+    [InlineData("{\"currency\":\"LYD\"}")]
+    public void Money_refuses_values_outside_the_wire_contract(string json)
+        => Assert.Throws<JsonException>(() => Read<Money>(json));
+
+    [Theory]
+    [InlineData(-1, "LYD")]
+    [InlineData(1, "lyd")]
+    public void Money_does_not_write_invalid_amounts_or_currencies(int amount, string currency)
+        => Assert.Throws<JsonException>(() => JsonSerializer.Serialize(new Money(amount, currency), AnisJson.Options));
+
 }

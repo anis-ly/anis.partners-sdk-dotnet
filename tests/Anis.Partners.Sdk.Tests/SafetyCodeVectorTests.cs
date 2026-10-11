@@ -15,13 +15,7 @@ public sealed class SafetyCodeVectorTests
     {
         get
         {
-            var directory = Path.Combine(AppContext.BaseDirectory, "vectors", "safety-code");
-
-            var files = Directory.Exists(directory)
-                ? Directory.GetFiles(directory, "SC-*.json").Order(StringComparer.Ordinal).ToArray()
-                : [];
-
-            Assert.True(files.Length > 0, $"No safety-code vectors were found under {directory}.");
+            var files = VectorFiles.List("safety-code", "SC-*.json");
 
             return new TheoryData<string>(files);
         }

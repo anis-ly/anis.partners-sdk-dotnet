@@ -69,6 +69,8 @@ internal static class SignatureInputParser
         long? created = null;
         string? keyId = null;
         string? algorithm = null;
+        string? tag = null;
+        var parameterNames = new HashSet<string>(StringComparer.Ordinal);
 
         while (index < value.Length)
         {
@@ -83,6 +85,9 @@ internal static class SignatureInputParser
                 return false;
 
             var name = value[index..nameEnd];
+
+            if (!parameterNames.Add(name))
+                return false;
             index = nameEnd + 1;
 
             if (index < value.Length && value[index] == '"')
@@ -99,6 +104,8 @@ internal static class SignatureInputParser
                     keyId = text;
                 else if (name == "alg")
                     algorithm = text;
+                else if (name == "tag")
+                    tag = text;
             }
             else
             {
@@ -120,7 +127,7 @@ internal static class SignatureInputParser
         if (created is null || keyId is null)
             return false;
 
-        parsed = new ParsedSignatureInput(label, identifiers, created.Value, keyId, algorithm);
+        parsed = new ParsedSignatureInput(label, identifiers, created.Value, keyId, algorithm, tag);
 
         return true;
     }
@@ -131,4 +138,5 @@ internal sealed record ParsedSignatureInput(
     IReadOnlyList<string> Identifiers,
     long Created,
     string KeyId,
-    string? Algorithm);
+    string? Algorithm,
+    string? Tag);

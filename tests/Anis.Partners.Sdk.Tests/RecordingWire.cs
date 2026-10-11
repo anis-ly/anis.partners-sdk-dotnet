@@ -44,7 +44,7 @@ internal sealed class RecordingWire(SignedResponseStub stub, ECDsa responseKey, 
     private HttpResponseMessage KeyDocument()
     {
         var q = responseKey.ExportParameters(includePrivateParameters: false).Q;
-        var json = $$"""{"keys":[{"kty":"EC","crv":"P-256","kid":"{{responseKeyId}}","x":"{{Base64Url(q.X!)}}","y":"{{Base64Url(q.Y!)}}"}]}""";
+        var json = $$"""{"keys":[{"kty":"EC","crv":"P-256","kid":"{{responseKeyId}}","status":"active","notBefore":"2026-01-01T00:00:00Z","x":"{{Base64Url(q.X!)}}","y":"{{Base64Url(q.Y!)}}"}],"revoked":[]}""";
 
         return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
     }

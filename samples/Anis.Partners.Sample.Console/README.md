@@ -1,7 +1,7 @@
 # Sample: a command-line partner integration
 
 One command per thing a partner does, each a few lines over the SDK — enroll a key, browse, buy, recover,
-reveal, check a signature. Read `SampleCommands.cs` for the integration code; `Program.cs` is only wiring.
+reveal, stop access, check a signature. Read `SampleCommands.cs` for the integration code; `Program.cs` is only wiring.
 
 ```bash
 dotnet run --project samples/Anis.Partners.Sample.Console -- help
@@ -34,6 +34,9 @@ export Sample__KeyId=3f2a9c14-8d6e-4b21-9f07-5c8ab2d61e43
 | `tour` | every read route once, following real ids from one answer to the next — moves no money |
 | `profile`, `wallets`, `wallet <w>` | identity and scopes; wallets and balances |
 | `categories <w>`, `subcategories <w> <c>`, `subcategory <w> <s>`, `cards <w> <s>` | the catalogue, priced for wallet `w` |
+| `catalogue-card <w> <card>` | one catalogue card, priced for wallet `w`, with logo and category |
+| `suspend-application "<reason>"` | suspends this application; Anis staff must resume it |
+| `revoke-key <key> "<reason>"` | revokes one of this application's keys permanently |
 | `order <w> <s> <card> <qty> [--reference r] [--use-allowed-debt]` | reads the card's `unitPrice`, **persists the intent**, then places the order |
 | `resume <operation>` | the same id and the same recorded body, freshly signed: recovery after a `202` or a timeout, and the idempotent repeat |
 | `order-status <operation>` | state only; dispatches nothing |

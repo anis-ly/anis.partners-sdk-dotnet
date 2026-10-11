@@ -5,6 +5,9 @@ SDK chooses the signature profile and the body for you; they are listed so a fai
 
 | SDK call | Route | Scope | Signed as | Body | Answer | Counts toward |
 |---|---|---|---|---|---|---|
+| `Access.SuspendApplicationAsync` | `POST /v1/application/suspend` | none | nonce mutation | `{ "reason": "..." }` | **signed, verified** | `requests` (application) |
+| `Access.RevokeKeyAsync` | `POST /v1/keys/{keyId}/revoke` | none | nonce mutation | `{ "reason": "..." }` | **signed, verified** | `requests` (application) |
+| `Catalogue.GetCardAsync` | `GET /v1/wallets/{walletId}/catalog/cards/{cardId}` | `catalogue:read` | read | none | unsigned | `requests` |
 | `Profile.GetAsync` | `GET /v1/profile` | `profile:read` | read | none | unsigned | `requests` |
 | `Wallets.ListAsync` / `ListPageAsync` | `GET /v1/wallets` | `wallets:read` | read | none | unsigned | `requests` |
 | `Wallets.GetAsync` | `GET /v1/wallets/{walletId}` | `wallets:read` | read | none | unsigned | `requests` |
@@ -14,10 +17,10 @@ SDK chooses the signature profile and the body for you; they are listed so a fai
 | `Catalogue.ListCardsAsync` / `ListCardsPageAsync` | `GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}/cards` | `catalogue:read` | read | none | unsigned | `requests` |
 | `Orders.CreateAsync` / `ResumeAsync` | `POST /v1/wallets/{walletId}/orders` | `orders:create` | order | the order JSON | **signed, verified** | `requests`, `orders` |
 | `Orders.GetAsync` | `GET /v1/orders/{operationId}` | `orders:read`, or `orders:create` for this application's own orders | read | none | **signed, verified** | `requests` |
-| `OwnedCards.ListAsync` / `ListPageAsync` | `GET /v1/wallets/{walletId}/cards` | `cards:read` | read | none | unsigned | `requests` |
-| `OwnedCards.GetAsync` | `GET /v1/wallets/{walletId}/cards/{soldCardId}` | `cards:read` | read | none | unsigned | `requests` |
-| `OwnedCards.RevealAsync` | `POST /v1/wallets/{walletId}/cards/{soldCardId}/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | **signed, verified** | `requests`, `reveals` |
-| `OwnedCards.RevealInvoiceAsync` | `POST /v1/wallets/{walletId}/invoices/{invoiceId}/cards/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | **signed, verified** | `requests`, `reveals` |
+| `OwnedCards.ListAsync` / `ListPageAsync` | `GET /v1/wallets/{walletId}/owned-cards` | `cards:read` | read | none | unsigned | `requests` |
+| `OwnedCards.GetAsync` | `GET /v1/wallets/{walletId}/owned-cards/{soldCardId}` | `cards:read` | read | none | unsigned | `requests` |
+| `OwnedCards.RevealAsync` | `POST /v1/wallets/{walletId}/owned-cards/{soldCardId}/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | **signed, verified** | `requests`, `reveals` |
+| `OwnedCards.RevealInvoiceAsync` | `POST /v1/wallets/{walletId}/invoices/{invoiceId}/owned-cards/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | **signed, verified** | `requests`, `reveals` |
 | `Diagnostics.CheckSignatureAsync` | `POST /v1/diagnostics/signature` | `diagnostics:use` | nonce mutation | exactly `{}` | **signed, verified** | `requests` |
 | `AnisEnrollmentClient.GetAsync` | `GET /v1/enrollments/{invitationId}` | enrollment token | — | none | **signed, verified** | — |
 | `AnisEnrollmentClient.SubmitKeyAsync` | `POST /v1/enrollments/{invitationId}/keys` | enrollment token | — | the public key | **signed, verified** | — |
@@ -29,15 +32,19 @@ SDK chooses the signature profile and the body for you; they are listed so a fai
 and a one-time nonce. *order*: adds the `Idempotency-Key` (your operation id). Every request you send is signed,
 on every route but enrolment and the key document.
 
-**Answer.** Anis signs the answers that move money, deliver card codes or establish a key — orders, order reads,
-both reveals and enrolment — and the signature self-check: every one of them, the success and each refusal. The SDK
+**Answer.** Anis signs the answers that move money, deliver card codes or establish or stop access — orders, order reads,
+both reveals, access stops and enrolment — and the signature self-check: every one of them, the success and each refusal. The SDK
 verifies those before you see them and discards one it cannot verify, including one that arrives with no signature
 (`SignatureMissing`). The information reads are answered unsigned — `Content-Digest` and `X-Request-Id`, no
 `Signature` — and the SDK returns them as they arrive, refusals included, with no verification and no call for
 Anis's published keys. Which is which is fixed per route in the SDK, never decided from what an answer carries.
 
 **Body.** The two reveals send no body at all — the gateway refuses any byte there — and still sign the
-digest of the empty body. The self-check sends exactly `{}`.
+digest of the empty body. The self-check sends exactly `{}`. Access stops send a JSON reason (required, trimmed, 1–500 characters)
+and sign its digest under the same nonce profile. They carry no idempotency key and are not wallet-bound.
+A retired key cannot be revoked (`key_not_revocable`, 409); an unknown key or one belonging to another application
+returns the same `resource_not_found`, 404. An already-revoked key returns its current state. Application suspension
+returns its current suspended state; subsequent requests are refused by admission. Resume is staff-only.
 
 ## Before a call is looked at
 

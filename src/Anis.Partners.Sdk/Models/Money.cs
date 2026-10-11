@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace Anis.Partners.Sdk.Models;
 
@@ -31,7 +32,7 @@ internal sealed class MoneyConverter : JsonConverter<Money>
 {
     public override Money Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var amount = 0m;
+        decimal? amount = null;
         string? currency = null;
         DateTimeOffset? asOf = null;
 
@@ -48,7 +49,15 @@ internal sealed class MoneyConverter : JsonConverter<Money>
                 case "amount":
                     // Parsed from the string, never from a number: the contract never sends one, and
                     // accepting one here would quietly admit a double that has already lost precision.
-                    amount = decimal.Parse(reader.GetString()!, NumberStyles.Number, CultureInfo.InvariantCulture);
+                    var text = reader.TokenType == JsonTokenType.String ? reader.GetString() : null;
+
+                    if (text is null || !Regex.IsMatch(text, @"\A[0-9]+\.[0-9]{3}\z", RegexOptions.CultureInvariant)
+                        || !decimal.TryParse(text, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var parsed))
+                    {
+                        throw new JsonException("Money amount must be a nonnegative decimal string at scale three.");
+                    }
+
+                    amount = parsed;
                     break;
 
                 case "currency":
@@ -58,15 +67,25 @@ internal sealed class MoneyConverter : JsonConverter<Money>
                 case "asOf":
                     asOf = reader.TokenType is JsonTokenType.Null ? null : reader.GetDateTimeOffset();
                     break;
+
+                default:
+                    reader.Skip();
+                    break;
             }
         }
 
-        return new Money(amount, currency ?? string.Empty, asOf);
+        if (amount is null || !ValidCurrency(currency))
+            throw new JsonException("Money requires an amount and an uppercase three-letter currency.");
+
+        return new Money(amount.Value, currency!, asOf);
     }
 
     public override void Write(Utf8JsonWriter writer, Money value, JsonSerializerOptions options)
     {
         ArgumentNullException.ThrowIfNull(writer);
+
+        if (value.Amount < 0 || decimal.Round(value.Amount, 3) != value.Amount || !ValidCurrency(value.Currency))
+            throw new JsonException("Money requires a nonnegative amount at scale three and an uppercase three-letter currency.");
 
         writer.WriteStartObject();
         writer.WriteString("amount", value.ToWireAmount());
@@ -77,4 +96,7 @@ internal sealed class MoneyConverter : JsonConverter<Money>
 
         writer.WriteEndObject();
     }
+
+    private static bool ValidCurrency(string? currency)
+        => currency is { Length: 3 } && currency.All(character => character is >= 'A' and <= 'Z');
 }

@@ -10,7 +10,7 @@ namespace Anis.Partners.Sdk.Operations;
 /// is an assertion nobody checks.
 ///
 /// It is also what decides, at run time, whether an answer is verified (<see cref="Find"/>). Anis signs the
-/// answers that move money, deliver card codes or establish a key, plus the signature self-check — every one of
+/// answers that move money, deliver card codes or establish or stop access to a key or application, plus the signature self-check — every one of
 /// them, success and refusal alike. The information routes answer unsigned. The decision is the route's, never
 /// the response's: an answer is not verified because it happens to carry a signature, and a signed route whose
 /// answer carries none is refused.
@@ -30,14 +30,17 @@ internal static class PartnerRoutes
         new("GET", "/v1/wallets/{walletId}/catalog/categories/{categoryId}/subcategories", SignatureProfile.SafeRead, SignsResponse: false),
         new("GET", "/v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}", SignatureProfile.SafeRead, SignsResponse: false),
         new("GET", "/v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}/cards", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}/cards", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}/cards/{soldCardId}", SignatureProfile.SafeRead, SignsResponse: false),
+        new("GET", "/v1/wallets/{walletId}/catalog/cards/{cardId}", SignatureProfile.SafeRead, SignsResponse: false),
+        new("GET", "/v1/wallets/{walletId}/owned-cards", SignatureProfile.SafeRead, SignsResponse: false),
+        new("GET", "/v1/wallets/{walletId}/owned-cards/{soldCardId}", SignatureProfile.SafeRead, SignsResponse: false),
 
-        // Money, card codes and the self-check: both directions signed.
+        // Money, card codes, access stops and the self-check: both directions signed.
+        new("POST", "/v1/application/suspend", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
+        new("POST", "/v1/keys/{keyId}/revoke", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
         new("POST", "/v1/wallets/{walletId}/orders", SignatureProfile.OrderMutation, SignsResponse: true),
         new("GET", "/v1/orders/{operationId}", SignatureProfile.SafeRead, SignsResponse: true),
-        new("POST", "/v1/wallets/{walletId}/cards/{soldCardId}/reveal", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
-        new("POST", "/v1/wallets/{walletId}/invoices/{invoiceId}/cards/reveal", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
+        new("POST", "/v1/wallets/{walletId}/owned-cards/{soldCardId}/reveal", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
+        new("POST", "/v1/wallets/{walletId}/invoices/{invoiceId}/owned-cards/reveal", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
         new("POST", "/v1/diagnostics/signature", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
 
         // Unsigned requests: enrollment carries a bearer-style token, and its answers establish a key, so they are signed.

@@ -24,19 +24,21 @@ public sealed class ResponseVectorTests
         ["algorithm_not_supported"] = ResponseVerificationFailure.AlgorithmNotSupported,
         ["label_unexpected"] = ResponseVerificationFailure.LabelUnexpected,
         ["created_out_of_window"] = ResponseVerificationFailure.CreatedOutOfWindow,
+        ["profile_unexpected"] = ResponseVerificationFailure.ProfileUnexpected,
+        ["key_compromised"] = ResponseVerificationFailure.KeyCompromised,
+        ["key_retired"] = ResponseVerificationFailure.KeyRetired,
+        ["key_not_yet_valid"] = ResponseVerificationFailure.KeyNotYetValid,
     };
+
+    [Fact]
+    public void Every_failure_has_a_conformance_reason()
+        => Assert.Equal(Enum.GetValues<ResponseVerificationFailure>().Order(), Reasons.Values.Order());
 
     public static TheoryData<string> Vectors
     {
         get
         {
-            var directory = Path.Combine(AppContext.BaseDirectory, "vectors", "response");
-
-            var files = Directory.Exists(directory)
-                ? Directory.GetFiles(directory, "RS-*.json").Order(StringComparer.Ordinal).ToArray()
-                : [];
-
-            Assert.True(files.Length > 0, $"No response vectors were found under {directory}.");
+            var files = VectorFiles.List("response", "RS-*.json");
 
             var data = new TheoryData<string>();
 
@@ -64,7 +66,8 @@ public sealed class ResponseVectorTests
             response.GetProperty("status").GetInt32(),
             headers,
             Convert.FromBase64String(response.GetProperty("bodyBase64").GetString()!),
-            vector.GetProperty("request").GetProperty("signatureInput").GetString());
+            vector.GetProperty("request").GetProperty("signatureInput").GetString(),
+            vector.GetProperty("request").TryGetProperty("signature", out var sentSignature) ? sentSignature.GetString() : null);
 
         var verifier = new PartnerResponseVerifier(
             new StaticSigningKeySource(vector.GetProperty("signingKeys").Deserialize<PartnerSigningKeySet>(

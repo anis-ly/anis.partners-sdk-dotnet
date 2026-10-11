@@ -79,6 +79,9 @@ try
         "subcategories" => commands.SubcategoriesAsync(Arguments.Id(positional, 0, "wallet id"), Arguments.Id(positional, 1, "category id"), ct),
         "subcategory" => commands.SubcategoryAsync(Arguments.Id(positional, 0, "wallet id"), Arguments.Id(positional, 1, "subcategory id"), ct),
         "cards" => commands.CardsAsync(Arguments.Id(positional, 0, "wallet id"), Arguments.Id(positional, 1, "subcategory id"), ct),
+        "catalogue-card" => commands.CatalogueCardAsync(Arguments.Id(positional, 0, "wallet id"), Arguments.Id(positional, 1, "card id"), ct),
+        "suspend-application" => commands.SuspendApplicationAsync(Arguments.At(positional, 0, "reason"), ct),
+        "revoke-key" => commands.RevokeKeyAsync(Arguments.Id(positional, 0, "key id"), Arguments.At(positional, 1, "reason"), ct),
         "order" => commands.OrderAsync(
             Arguments.Id(positional, 0, "wallet id"),
             Arguments.Id(positional, 1, "subcategory id"),
@@ -224,6 +227,8 @@ internal static class Arguments
           profile | wallets | wallet <wallet>
           categories <wallet> | subcategories <wallet> <category>
           subcategory <wallet> <subcategory> | cards <wallet> <subcategory>
+          catalogue-card <wallet> <card>
+          suspend-application <reason> | revoke-key <key> <reason>
           order <wallet> <subcategory> <card> <quantity> [--reference <text>] [--use-allowed-debt]
                 [--operation <id>] [--expected-unit-price <amount>]
           resume <operation>                          same id, same recorded body (also an idempotent repeat)

@@ -74,6 +74,9 @@ public enum PartnerErrorCode
     /// <summary>HTTP 409. This invitation already took a key, so a newly generated key pair is refused too. Read the enrolment status first; to enrol a different key, ask Anis staff to restart the enrolment.</summary>
     KeyDuplicate = 19,
 
+    /// <summary>HTTP 409. A retired key cannot be revoked. Use the current application credential.</summary>
+    KeyNotRevocable = 38,
+
     /// <summary>HTTP 422. Correct the P-256/P1363 proof for the active challenge generation.</summary>
     KeyProofInvalid = 20,
 
@@ -153,6 +156,7 @@ public static class PartnerErrorCodes
         ["invitation_invalid"] = PartnerErrorCode.InvitationInvalid,
         ["invoice_reveal_limit_exceeded"] = PartnerErrorCode.InvoiceRevealLimitExceeded,
         ["key_duplicate"] = PartnerErrorCode.KeyDuplicate,
+        ["key_not_revocable"] = PartnerErrorCode.KeyNotRevocable,
         ["key_proof_invalid"] = PartnerErrorCode.KeyProofInvalid,
         ["malformed_signed_request"] = PartnerErrorCode.MalformedSignedRequest,
         ["operation_processing"] = PartnerErrorCode.OperationProcessing,

@@ -21,7 +21,7 @@ is what makes every later retry safe, including one that happens after a process
 ## The price to send
 
 ```csharp
-var card = /* from anis.Catalogue.ListCardsAsync(walletId, subcategoryId) */;
+var card = await anis.Catalogue.GetCardAsync(walletId, cardId, ct);
 
 var request = new CreateOrderRequest
 {
@@ -173,7 +173,7 @@ This table classifies a first attempt. On a resume, every fresh (non-replayed) r
 |---|---|---|---|---|
 | `price_changed` | 409 | `PriceChangedException` | OrderNotPlaced | Re-read the catalogue; new order at the new `unitPrice`, new id |
 | `insufficient_balance` | 409 | `InsufficientBalanceException` | OrderNotPlaced | Top up; new order, new id |
-| `quantity_unavailable` | 409 | `OutOfStockException` | OrderNotPlaced | Sold out, not enough stock, or outside the card's own minimum/maximum. Re-read the catalogue; new order |
+| `quantity_unavailable` | 409 | `OutOfStockException` | OrderNotPlaced | Sold out, not enough stock, or outside the platform quantity range (1–100). Re-read the catalogue; new order |
 | `card_unavailable` | 409 | `OutOfStockException` | OrderNotPlaced | The card is not sellable to this wallet now (or does not exist). Re-read the catalogue |
 | `allowed_debt_consent_required` | 402 | `AnisApiException` | OrderNotPlaced | New order with `UseAllowedDebt = true` — only if you mean to spend debt |
 | `owner_limit_exceeded` | 409 | `LimitExceededException` | OrderNotPlaced | The owner's allowance is used up. **Do not poll**; new order once it changes |

@@ -63,7 +63,7 @@ public sealed class PipelineBehaviourTests
 
         Assert.Single(revealed.Items);
         Assert.Equal(
-            $"/v1/wallets/{Wallet:D}/invoices/{Invoice:D}/cards/reveal",
+            $"/v1/wallets/{Wallet:D}/invoices/{Invoice:D}/owned-cards/reveal",
             fixture.Stub.LastRequest!.RequestUri!.AbsolutePath);
         AssertBodylessReveal(fixture);
     }

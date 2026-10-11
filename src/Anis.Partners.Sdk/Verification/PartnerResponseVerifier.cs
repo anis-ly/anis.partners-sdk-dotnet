@@ -16,11 +16,13 @@ namespace Anis.Partners.Sdk.Verification;
 /// and the client supplies its own copy — it never learns what the server bound, which is why a response
 /// bound to a different request fails as an invalid signature rather than as a binding-specific error.
 /// </param>
+/// <param name="RequestSignature">The raw <c>Signature</c> header value this client sent.</param>
 internal sealed record VerifiableResponse(
     int Status,
     IReadOnlyDictionary<string, string> Headers,
     byte[] Body,
-    string? RequestSignatureInput);
+    string? RequestSignatureInput,
+    string? RequestSignature);
 
 /// <summary>Verifies a signed Partner response, or refuses it.</summary>
 /// <remarks>
@@ -50,7 +52,7 @@ internal sealed class PartnerResponseVerifier(
         if (!TryHeader(response, SignatureInputHeader, out var signatureInput) || !TryHeader(response, SignatureHeader, out var signature))
             throw Fail(ResponseVerificationFailure.SignatureMissing, "The response carried no signature headers.");
 
-        // 2-4. Parse, and the two frozen constants.
+        // 2-4. Parse and enforce the label, algorithm and profile.
         if (!SignatureInputParser.TryParse(signatureInput, out var parsed))
             throw Fail(ResponseVerificationFailure.SignatureMalformed, "Signature-Input could not be parsed.");
 
@@ -62,6 +64,9 @@ internal sealed class PartnerResponseVerifier(
 
         if (parsed.Algorithm is not null && parsed.Algorithm != PartnerResponseSignatureBase.Algorithm)
             throw Fail(ResponseVerificationFailure.AlgorithmNotSupported, "There is no alternate algorithm to negotiate.");
+
+        if (parsed.Tag != PartnerResponseSignatureBase.Profile)
+            throw Fail(ResponseVerificationFailure.ProfileUnexpected, "The response must use tag=\"anis-response-v2\".");
 
         // 5. The digest describes the body that arrived. Before anything cryptographic.
         if (!TryHeader(response, ContentDigestHeader, out var contentDigest))
@@ -82,6 +87,7 @@ internal sealed class PartnerResponseVerifier(
             contentDigest,
             requestId,
             response.RequestSignatureInput,
+            response.RequestSignature,
             Header(response, "Location"),
             Header(response, "Retry-After"),
             Header(response, "Idempotency-Replayed"),
@@ -93,24 +99,25 @@ internal sealed class PartnerResponseVerifier(
         {
             throw Fail(
                 ResponseVerificationFailure.CoveredComponentsMismatch,
-                "The advertised components are not the ones partner-response-v1 produces for this response.");
+                "The advertised components are not the ones anis-response-v2 produces for this response.");
         }
 
         // 7. The base names ;req but this client has no request signature to put there.
         if (parsed.Identifiers.Any(identifier => identifier.EndsWith(";req", StringComparison.Ordinal))
-            && string.IsNullOrEmpty(response.RequestSignatureInput))
+            && (string.IsNullOrEmpty(response.RequestSignatureInput) || string.IsNullOrEmpty(response.RequestSignature)))
         {
             throw Fail(ResponseVerificationFailure.CoveredComponentsMismatch, "The request binding cannot be rebuilt.");
         }
 
         // 8. A response signature has created and no expires, so freshness is the client's to bound.
-        var age = timeProvider.GetUtcNow().ToUnixTimeSeconds() - parsed.Created;
+        var age = (double)timeProvider.GetUtcNow().ToUnixTimeSeconds() - parsed.Created;
 
         if (Math.Abs(age) > PartnerResponseSignatureBase.MaxAge.TotalSeconds)
             throw Fail(ResponseVerificationFailure.CreatedOutOfWindow, $"created is {age}s from this clock.");
 
         // 9. Resolve from the PUBLISHED document, refreshing once for a rotation.
         var document = await keys.GetAsync(cancellationToken).ConfigureAwait(false);
+        RejectCompromised(document, parsed.KeyId);
         var key = Resolve(document, parsed.KeyId);
 
         if (key is null)
@@ -121,6 +128,7 @@ internal sealed class PartnerResponseVerifier(
             Log.UnknownSigningKey(_logger, parsed.KeyId);
 
             document = await keys.RefreshAsync(cancellationToken).ConfigureAwait(false);
+            RejectCompromised(document, parsed.KeyId);
             key = Resolve(document, parsed.KeyId);
         }
 
@@ -133,6 +141,18 @@ internal sealed class PartnerResponseVerifier(
 
         if (key is null)
             throw Fail(ResponseVerificationFailure.UnknownKey, $"keyid {parsed.KeyId} is not a published key version.");
+
+        if (key.Status is not ("active" or "next" or "retired") || key.NotBefore is null
+            || (key.Status == "retired" && key.RetiredAt is null))
+        {
+            throw Fail(ResponseVerificationFailure.KeyRejected, "The published key has invalid lifecycle metadata.");
+        }
+
+        if (key.Status == "retired" && DateTimeOffset.FromUnixTimeSeconds(parsed.Created) > key.RetiredAt!.Value)
+            throw Fail(ResponseVerificationFailure.KeyRetired, "The response was signed after this key retired.");
+
+        if (key.Status == "next" && DateTimeOffset.FromUnixTimeSeconds(parsed.Created) < key.NotBefore!.Value)
+            throw Fail(ResponseVerificationFailure.KeyNotYetValid, "The response was signed before this key becomes valid.");
 
         // 10-11. P1363 by shape, then by verification over the REBUILT base.
         var signatureBytes = ByteSequence(signature);
@@ -179,6 +199,12 @@ internal sealed class PartnerResponseVerifier(
         }
     }
 
+    private void RejectCompromised(PartnerSigningKeySet document, string keyId)
+    {
+        if (document.Revoked.Any(key => string.Equals(key.Kid, keyId, StringComparison.Ordinal)))
+            throw Fail(ResponseVerificationFailure.KeyCompromised, "The response names a compromised signing key.");
+    }
+
     private const int P256CoordinateBytes = 32;
 
     private static byte[]? Coordinate(string? base64Url)
@@ -196,7 +222,7 @@ internal sealed class PartnerResponseVerifier(
             : null;
     }
 
-    private static PartnerJwk? Resolve(PartnerSigningKeySet document, string keyId)
+    private static PublishedSigningKey? Resolve(PartnerSigningKeySet document, string keyId)
         => document.Keys.FirstOrDefault(key
             => string.Equals(key.Kid, keyId, StringComparison.Ordinal)
             && !string.IsNullOrEmpty(key.X)

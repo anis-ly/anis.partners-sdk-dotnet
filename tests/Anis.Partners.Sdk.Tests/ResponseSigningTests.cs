@@ -11,7 +11,7 @@ namespace Anis.Partners.Sdk.Tests;
 
 /// <summary>Which answers are verified: the route decides, never the answer.</summary>
 /// <remarks>
-/// Anis signs the answers that move money, deliver card codes or establish a key, plus the signature self-check —
+/// Anis signs the answers that move money, deliver card codes or establish or stop access to a key or application, plus the signature self-check —
 /// each one, success and refusal. The information reads answer unsigned. Every request is still signed.
 /// </remarks>
 public sealed class ResponseSigningTests
@@ -25,7 +25,7 @@ public sealed class ResponseSigningTests
 
     private const string EmptyPage = """{"items":[],"nextCursor":null}""";
 
-    private const string WalletBody = """{"id":"2f1c8a94-6d37-4e52-b8a1-0c9e5d3f7b26","name":"Main","currency":"LYD","balance":{"amount":"1.000","currency":"LYD"}}""";
+    private const string WalletBody = """{"id":"2f1c8a94-6d37-4e52-b8a1-0c9e5d3f7b26","name":"Main","balance":{"amount":"1.000","currency":"LYD"}}""";
 
     // Every SDK call on an information route, with an answer its model reads.
     private static readonly Dictionary<string, (string Body, Func<IAnisPartnersClient, CancellationToken, Task> Call)> InformationCalls = new(StringComparer.Ordinal)
@@ -47,18 +47,23 @@ public sealed class ResponseSigningTests
         ["GET /v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}/cards"] = (
             EmptyPage,
             (anis, token) => anis.Catalogue.ListCardsPageAsync(Wallet, Subcategory, null, token)),
-        ["GET /v1/wallets/{walletId}/cards"] = (EmptyPage, (anis, token) => anis.OwnedCards.ListPageAsync(Wallet, null, token)),
-        ["GET /v1/wallets/{walletId}/cards/{soldCardId}"] = (
-            $$"""{"id":"{{SoldCard:D}}","credentialAvailable":true}""",
+        ["GET /v1/wallets/{walletId}/catalog/cards/{cardId}"] = (
+            $$"""{"id":"{{SoldCard:D}}"}""",
+            (anis, token) => anis.Catalogue.GetCardAsync(Wallet, SoldCard, token)),
+        ["GET /v1/wallets/{walletId}/owned-cards"] = (EmptyPage, (anis, token) => anis.OwnedCards.ListPageAsync(Wallet, null, token)),
+        ["GET /v1/wallets/{walletId}/owned-cards/{soldCardId}"] = (
+            $$"""{"soldCardId":"{{SoldCard:D}}","credentialAvailable":true}""",
             (anis, token) => anis.OwnedCards.GetAsync(Wallet, SoldCard, token)),
     };
 
     // Every signed-route call that throws on an answer it cannot verify. The order create is below: it returns an outcome instead.
     private static readonly Dictionary<string, Func<IAnisPartnersClient, CancellationToken, Task>> SignedCalls = new(StringComparer.Ordinal)
     {
+        ["POST /v1/application/suspend"] = (anis, token) => anis.Access.SuspendApplicationAsync("Maintenance", token),
+        ["POST /v1/keys/{keyId}/revoke"] = (anis, token) => anis.Access.RevokeKeyAsync(SoldCard, "Key exposed", token),
         ["GET /v1/orders/{operationId}"] = (anis, token) => anis.Orders.GetAsync(Operation, token),
-        ["POST /v1/wallets/{walletId}/cards/{soldCardId}/reveal"] = (anis, token) => anis.OwnedCards.RevealAsync(Wallet, SoldCard, token),
-        ["POST /v1/wallets/{walletId}/invoices/{invoiceId}/cards/reveal"] = (anis, token) => anis.OwnedCards.RevealInvoiceAsync(Wallet, Invoice, token),
+        ["POST /v1/wallets/{walletId}/owned-cards/{soldCardId}/reveal"] = (anis, token) => anis.OwnedCards.RevealAsync(Wallet, SoldCard, token),
+        ["POST /v1/wallets/{walletId}/invoices/{invoiceId}/owned-cards/reveal"] = (anis, token) => anis.OwnedCards.RevealInvoiceAsync(Wallet, Invoice, token),
         ["POST /v1/diagnostics/signature"] = (anis, token) => anis.Diagnostics.CheckSignatureAsync(token),
     };
 
