@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Anis.Partners.Sdk.Tests;
 
-/// <summary>Runs the vectors listed by each corpus manifest, with an exact disk inventory check.</summary>
+/// <summary>Runs every vector, enforcing the manifest's count and listed ids when present.</summary>
 internal static class VectorFiles
 {
     public static string[] List(string group, string pattern)
@@ -18,7 +18,16 @@ internal static class VectorFiles
             return files;
 
         using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
-        var listed = manifest.RootElement.GetProperty("vectors").EnumerateArray()
+
+        // Request manifests declare the count and signing profiles without listing individual vector ids.
+        if (!manifest.RootElement.TryGetProperty("vectors", out var vectors))
+        {
+            Assert.Equal("request", group);
+            Assert.Equal(files.Length, manifest.RootElement.GetProperty("total").GetInt32());
+            return files;
+        }
+
+        var listed = vectors.EnumerateArray()
             .Select(vector => vector.GetProperty("id").GetString()!).Order(StringComparer.Ordinal).ToArray();
         var onDisk = files.Select(file =>
         {

@@ -44,12 +44,16 @@ public sealed class AnisPartnersClientOptions
     /// <summary>The longest <see cref="SignatureLifetime"/> this SDK accepts: its own answer-freshness window.</summary>
     public static TimeSpan MaxSignatureLifetime => Verification.PartnerResponseSignatureBase.MaxAge;
 
+    /// <summary>The longest <see cref="SigningKeyCacheDuration"/> this SDK accepts.</summary>
+    /// <remarks>A key Anis withdraws must stop verifying answers within five minutes on every partner.</remarks>
+    public static TimeSpan MaxSigningKeyCacheDuration { get; } = TimeSpan.FromMinutes(5);
+
     /// <summary>Optional presentation preference sent as <c>Accept-Language</c>.</summary>
     public AnisLanguage AcceptLanguage { get; set; } = AnisLanguage.Unspecified;
 
     /// <summary>How long the published signing-key document is cached before a scheduled re-fetch.</summary>
-    /// <remarks>A rotation does not wait for this: an unknown key version triggers one immediate refresh.</remarks>
-    public TimeSpan SigningKeyCacheDuration { get; set; } = TimeSpan.FromMinutes(10);
+    /// <remarks>Five minutes by default and at most. An unknown key version triggers a refresh, at most once every 30 seconds.</remarks>
+    public TimeSpan SigningKeyCacheDuration { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>Per-request timeout.</summary>
     /// <remarks>
@@ -78,8 +82,8 @@ public sealed class AnisPartnersClientOptions
         if (Timeout <= TimeSpan.Zero)
             throw new InvalidOperationException("AnisPartnersClientOptions.Timeout must be positive.");
 
-        if (SigningKeyCacheDuration <= TimeSpan.Zero)
-            throw new InvalidOperationException("AnisPartnersClientOptions.SigningKeyCacheDuration must be positive.");
+        if (SigningKeyCacheDuration <= TimeSpan.Zero || SigningKeyCacheDuration > MaxSigningKeyCacheDuration)
+            throw new InvalidOperationException($"AnisPartnersClientOptions.SigningKeyCacheDuration must be positive and at most {MaxSigningKeyCacheDuration.TotalMinutes:F0} minutes, so a withdrawn Anis key stops verifying answers quickly.");
 
         if (SignatureLifetime < TimeSpan.FromSeconds(1) || SignatureLifetime > MaxSignatureLifetime)
         {

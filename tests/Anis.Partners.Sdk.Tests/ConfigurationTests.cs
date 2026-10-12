@@ -70,6 +70,18 @@ public sealed class ConfigurationTests
     }
 
     [Fact]
+    public void A_key_cache_longer_than_five_minutes_fails_at_startup()
+    {
+        var section = Settings(new()
+        {
+            ["AnisPartners:Authority"] = "https://partners.example",
+            ["AnisPartners:SigningKeyCacheDuration"] = "00:05:01",
+        }).GetSection(AnisPartnersClientOptions.SectionName);
+
+        Assert.Throws<InvalidOperationException>(() => new ServiceCollection().AddAnisPartners(section));
+    }
+
+    [Fact]
     public void A_registration_without_a_signer_says_so_when_the_client_is_resolved()
     {
         var services = new ServiceCollection();

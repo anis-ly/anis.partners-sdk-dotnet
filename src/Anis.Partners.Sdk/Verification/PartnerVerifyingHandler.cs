@@ -94,6 +94,9 @@ public sealed class HttpSigningKeySource(
 {
     private const string Path = ".well-known/partner-signing-keys.json";
 
+    // Forged key ids must not make a client flood Anis, even when the fetch fails.
+    internal static readonly TimeSpan UnknownKeyRefetchCooldown = TimeSpan.FromSeconds(30);
+
     /// <summary>Fetches through one <see cref="HttpClient"/> for the life of this source.</summary>
     public HttpSigningKeySource(
         HttpClient http,
@@ -106,55 +109,123 @@ public sealed class HttpSigningKeySource(
 
     private readonly ILogger _logger = logger ?? NullLogger<HttpSigningKeySource>.Instance;
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly object _refreshGate = new();
+    private readonly TimeSpan _cacheDuration = cacheDuration <= AnisPartnersClientOptions.MaxSigningKeyCacheDuration
+        ? cacheDuration
+        : throw new ArgumentOutOfRangeException(nameof(cacheDuration), cacheDuration, "The key document may be cached for at most five minutes.");
 
     private PartnerSigningKeySet? _cached;
-    private DateTimeOffset _fetchedAt;
+    private long _fetchedAt;
+    private long? _unknownKeyFetchAt;
+    private Task<PartnerSigningKeySet>? _refreshTask;
 
     /// <inheritdoc/>
     public async ValueTask<PartnerSigningKeySet> GetAsync(CancellationToken cancellationToken)
     {
-        if (_cached is { } cached && timeProvider.GetUtcNow() - _fetchedAt < cacheDuration)
+        if (Fresh() is { } cached)
             return cached;
 
-        return await FetchAsync(_cached is null ? "first-use" : "expired", cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc/>
-    public ValueTask<PartnerSigningKeySet> RefreshAsync(CancellationToken cancellationToken)
-        => FetchAsync("refresh", cancellationToken);
-
-    private async ValueTask<PartnerSigningKeySet> FetchAsync(string reason, CancellationToken cancellationToken)
-    {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, Path);
-            request.Options.Set(PartnerResponseOptions.SkipVerification, true);
-
-            using var response = await http().SendAsync(request, cancellationToken).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
-
-            var document = await response.Content
-                .ReadFromJsonAsync<PartnerSigningKeySet>(AnisJson.Options, cancellationToken)
-                .ConfigureAwait(false);
-
-            _cached = document ?? new PartnerSigningKeySet();
-            _fetchedAt = timeProvider.GetUtcNow();
-
-            AnisPartnersTelemetry.SigningKeyFetches.Add(
-                1,
-                new KeyValuePair<string, object?>(AnisPartnersTelemetry.Tags.FetchReason, reason));
-
-            Log.SigningKeysFetched(_logger, reason, _cached.Keys.Count);
-
-            return _cached;
+            // A caller that waited here may find the document another caller just fetched.
+            return Fresh() ?? await FetchLockedAsync(_cached is null ? "first-use" : "expired", cancellationToken).ConfigureAwait(false);
         }
         finally
         {
             _gate.Release();
         }
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask<PartnerSigningKeySet> RefreshAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Task<PartnerSigningKeySet> refresh;
+        TaskCompletionSource<PartnerSigningKeySet>? completion = null;
+
+        lock (_refreshGate)
+        {
+            if (_refreshTask is { IsCompleted: false } pending)
+            {
+                refresh = pending;
+            }
+            else
+            {
+                // Publish before fetching so overlapping callers share the result even after the cooldown elapses.
+                completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                refresh = _refreshTask = completion.Task;
+            }
+        }
+
+        if (completion is not null)
+        {
+            try
+            {
+                completion.SetResult(await RefreshCoreAsync(cancellationToken).ConfigureAwait(false));
+            }
+            catch (OperationCanceledException failure)
+            {
+                completion.SetCanceled(failure.CancellationToken);
+            }
+            catch (Exception failure)
+            {
+                completion.SetException(failure);
+            }
+        }
+
+        return await refresh.WaitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<PartnerSigningKeySet> RefreshCoreAsync(CancellationToken cancellationToken)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            var now = timeProvider.GetTimestamp();
+
+            if (_cached is { } held && _unknownKeyFetchAt is { } started
+                && timeProvider.GetElapsedTime(started, now) < UnknownKeyRefetchCooldown)
+                return held;
+
+            _unknownKeyFetchAt = now;
+            return await FetchLockedAsync("refresh", cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private PartnerSigningKeySet? Fresh()
+        => _cached is { } cached && timeProvider.GetElapsedTime(_fetchedAt) < _cacheDuration ? cached : null;
+
+    private async ValueTask<PartnerSigningKeySet> FetchLockedAsync(string reason, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, Path);
+        request.Options.Set(PartnerResponseOptions.SkipVerification, true);
+
+        using var response = await http().SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+        response.EnsureSuccessStatusCode();
+
+        var document = await response.Content
+            .ReadFromJsonAsync<PartnerSigningKeySet>(AnisJson.Options, cancellationToken)
+            .ConfigureAwait(false);
+
+        _cached = document ?? new PartnerSigningKeySet();
+        _fetchedAt = timeProvider.GetTimestamp();
+
+        AnisPartnersTelemetry.SigningKeyFetches.Add(
+            1,
+            new KeyValuePair<string, object?>(AnisPartnersTelemetry.Tags.FetchReason, reason));
+
+        Log.SigningKeysFetched(_logger, reason, _cached.Keys.Count);
+
+        return _cached;
     }
 
     private static Func<HttpClient> Fixed(HttpClient http)

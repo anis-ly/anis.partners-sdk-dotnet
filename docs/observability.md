@@ -90,6 +90,7 @@ Order calls return those outcomes as `OrderOutcomeUnknown`. If your own token ca
 **`signing_keys.fetches` with reason `refresh`** means a response named a key version this client had not
 seen — a rotation in progress, or a client pointed at the wrong authority. The first fetch happens at the first
 signed answer, not the first call: a client that has only read information has fetched nothing.
+A `refresh` fetch happens at most once every 30 seconds per key source.
 
 ## Logs
 

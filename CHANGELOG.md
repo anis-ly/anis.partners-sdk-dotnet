@@ -11,8 +11,13 @@ All notable changes to the `Anis.Partners` package. Versions follow [Semantic Ve
 - Signed answers require `tag="anis-response-v2"` and cover the request's raw `Signature` immediately after
   `Signature-Input`, both with `;req`. Other profiles are rejected as `ProfileUnexpected`.
 - The response key document uses `PublishedSigningKey` with `Status`, `NotBefore` and `RetiredAt`, plus `Revoked`.
-  Compromised keys, signatures after retirement and next keys used before activation are refused as
-  `KeyCompromised`, `KeyRetired` and `KeyNotYetValid`.
+  Compromised keys and signatures after retirement are refused as `KeyCompromised` and `KeyRetired`.
+- Any published response key (active, next or retired) refuses a signature created before its `NotBefore` (`KeyNotYetValid`).
+- `SigningKeyCacheDuration` defaults to 5 minutes and may not exceed 5 minutes
+  (`AnisPartnersClientOptions.MaxSigningKeyCacheDuration`); `HttpSigningKeySource` refuses a longer duration.
+- An unknown response key version re-fetches the key document at most once per 30 seconds per key source,
+  failed fetches included; callers waiting on one fetch share it.
+- Documentation: retired keys stay published for 90 days after retirement.
 - Owned-card paths use `/owned-cards`. `MaskedCard.SoldCardId` and `OperationId` replace the old identifiers;
   `FaceValue` and `Subcategory` belong to `CardSummary`, alongside `Logo` and `Category`. Reveals and order
   `SoldCards` share the full `RevealedCredential` shape, including invoice, product and purchase details.
@@ -22,6 +27,8 @@ All notable changes to the `Anis.Partners` package. Versions follow [Semantic Ve
 
 ### Added
 
+- Recognise `spending_limit_exceeded` (HTTP 429): a spending-capped order is not placed and is reported as
+  `LimitExceededException` with the `Retry-After` delay until the spending window ends.
 - `Access.SuspendApplicationAsync(reason)` and `Access.RevokeKeyAsync(keyId, reason)`: signed nonce mutations
   with a trimmed JSON reason, no idempotency key and no required scope. Resumption stays staff-only.
 - `Catalogue.GetCardAsync(walletId, cardId)` for a single wallet-priced catalogue card.

@@ -100,9 +100,10 @@ There is no option to turn this off, and no option to turn it on for a route Ani
 ## Anis's response keys rotate automatically
 
 The published document carries the active, next and retired versions at once, so a response received just
-before a rotation still verifies just after one. The SDK caches it for `SigningKeyCacheDuration` and
-refreshes **once immediately** on a `keyid` it does not know, which is the ordinary signal that a rotation
-happened. A document carrying a private member is rejected whole — not just that key.
+before a rotation still verifies just after one. The SDK caches it for `SigningKeyCacheDuration` (five minutes
+by default and at most) and refreshes on a `keyid` it does not know — at most once every 30 seconds — which is
+the ordinary signal that a rotation happened. A document carrying a private member is rejected whole — not just
+that key.
 
 You never need to act on a rotation. For reference, this schematic published document shows several versions at
 once, each named by `kid` (`x` and `y` are abbreviated here):
@@ -132,9 +133,10 @@ raw request header value (`sig1=:…:`), never decoded or re-encoded. Parameters
 `;created=<unix>;keyid="<kid>";alg="ecdsa-p256-sha256";tag="anis-response-v2"`.
 
 A `kid` in `revoked[]` is always refused, regardless of `compromisedAt` or whether it also appears in `keys[]`.
-A retired key is refused when signature `created` is strictly after `retiredAt`; a next key is refused when
-`created` is strictly before `notBefore`. Equality at either boundary is accepted. Retired keys remain published
-for 24 hours after retirement and compromised ids for 90 days. These rules use signature creation, not fetch time.
+A retired key is refused when signature `created` is strictly after `retiredAt`; any key (`active`, `next` or
+`retired`) is refused when `created` is strictly before its `notBefore`. Equality at either boundary is accepted.
+Retired keys remain published for 90 days after retirement and compromised ids for 90 days, so stored answers
+can be checked during a dispute. These rules use signature creation, not fetch time.
 Enrollment's `PartnerJwk` stays separate from the response-only `PublishedSigningKey`.
 
 The closed failure vocabulary (`ResponseVerificationFailure`) is:

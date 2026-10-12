@@ -20,6 +20,7 @@ public sealed class ErrorMappingTests
         ["card_unavailable"] = (typeof(OutOfStockException), OrderRefusalOutcome.NotPlaced),
         ["owner_limit_exceeded"] = (typeof(LimitExceededException), OrderRefusalOutcome.NotPlaced),
         ["daily_limit_exceeded"] = (typeof(LimitExceededException), OrderRefusalOutcome.NotPlaced),
+        ["spending_limit_exceeded"] = (typeof(LimitExceededException), OrderRefusalOutcome.NotPlaced),
         ["allowed_debt_consent_required"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
         ["purchase_not_allowed"] = (typeof(AuthorizationException), OrderRefusalOutcome.NotPlaced),
         ["wallet_disabled"] = (typeof(AuthorizationException), OrderRefusalOutcome.NotPlaced),

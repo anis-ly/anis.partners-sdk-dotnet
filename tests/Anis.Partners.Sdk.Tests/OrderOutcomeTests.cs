@@ -284,6 +284,32 @@ public sealed class OrderOutcomeTests
     }
 
     [Fact]
+    public async Task A_spending_capped_order_is_not_placed_and_carries_the_signed_retry_after()
+    {
+        using var fixture = new PipelineFixture();
+
+        fixture.Stub.Status = HttpStatusCode.TooManyRequests;
+        fixture.Stub.NoStore = true;
+        fixture.Stub.RetryAfterSeconds = 3600;
+        fixture.Stub.Body =
+            """{"type":"https://developers.anis.ly/errors/spending-limit-exceeded","title":"Spending limit reached","status":429,"code":"spending_limit_exceeded","requestId":"01J9"}""";
+
+        var result = await fixture.Client.Orders.CreateAsync(Wallet, Operation, Order, TestContext.Current.CancellationToken);
+
+        var notPlaced = Assert.IsType<OrderNotPlaced>(result);
+        var refusal = Assert.IsType<LimitExceededException>(notPlaced.Refusal);
+        Assert.Equal(Operation, notPlaced.OperationId);
+        Assert.Equal(PartnerErrorCode.SpendingLimitExceeded, refusal.Code);
+        Assert.Equal("spending_limit_exceeded", refusal.RawCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, refusal.Status);
+        Assert.Equal("01J9", refusal.RequestId);
+        Assert.Equal(TimeSpan.FromSeconds(3600), refusal.RetryAfter);
+        Assert.Equal(OrderRefusalOutcome.NotPlaced, refusal.OrderOutcome);
+        Assert.False(refusal.IsRetryable);
+        Assert.False(refusal.IsReplayed);
+    }
+
+    [Fact]
     public async Task A_rate_limited_create_without_a_retry_after_suggests_the_default_delay()
     {
         using var fixture = new PipelineFixture();
