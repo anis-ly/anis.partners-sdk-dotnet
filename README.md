@@ -1,6 +1,6 @@
 # Anis.Partners — .NET SDK
 
-Version **2.0.0**. **1.x is deprecated — upgrade.**
+Version **2.0.1**. **1.x is deprecated — upgrade.**
 
 The .NET client for the Anis Partner API. Targets **net8.0** and **net10.0**.
 
@@ -9,7 +9,7 @@ to get dangerously wrong — the idempotency key, the credential-once rule, reco
 verification — are shaped so you cannot get them wrong quietly.
 
 ```bash
-dotnet add package Anis.Partners --version 2.0.0
+dotnet add package Anis.Partners --version 2.0.1
 ```
 
 - [Getting started](docs/getting-started.md) — enrollment, registration (one application or several), first call
@@ -84,8 +84,9 @@ var revoked = await anis.Access.RevokeKeyAsync(keyId, "Key exposed", ct);
 
 `MaskedCard` uses `SoldCardId` and `OperationId`; product details are in `CardSummary` (`Card`). The same summary
 appears in reveals and order `SoldCards`. Catalogue cards include `Logo` and `Category`; subcategory lists include
-`Description`. Wallet currency is `Balance.Currency`. All amounts use `Money`, a nonnegative decimal string at
-scale three with an uppercase three-letter currency. Owned-card routes use `/owned-cards`.
+`Description`. Wallet currency is `Balance.Currency`. All amounts use `Money`, a decimal string at scale three
+with an uppercase three-letter currency. A wallet balance is negative (for example `-150.000`) while the wallet uses
+allowed debt; prices and totals are never negative. Owned-card routes use `/owned-cards`.
 
 Signed answers require `tag="anis-response-v2"` and bind both request signature headers. The verifier refuses
 compromised keys, signatures after a key's retirement and signatures before any published key's activation.
@@ -208,7 +209,7 @@ replay, both reveals, a signed refusal (a changed price) and an unsigned one (a 
 
 ### What is NOT yet proven live
 
-Version 2.0.0 has no live certification from this lane; the dated runs above cover 1.x.
+Version 2.x has no live certification from this lane yet; the dated runs above cover 1.x.
 
 - **Orders whose outcome is unknown** — a `202` still processing, a timeout, an owner-side outage, the
   recovered completion. They cannot be provoked by hand on a healthy stack; they are covered by Anis's

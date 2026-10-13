@@ -8,7 +8,7 @@ working days.
 
 ## Supported versions
 
-Security fixes target **2.0.0**. **1.x is deprecated — upgrade.** Signed answers require the `anis-response-v2`
+Security fixes target **2.0.1**. **1.x is deprecated — upgrade.** Signed answers require the `anis-response-v2`
 profile, request signature binding and the published key lifecycle checks described in the security guide.
 
 ## Your private key
