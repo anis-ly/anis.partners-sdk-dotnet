@@ -13,12 +13,15 @@ namespace Anis.Partners.Sdk.Models;
 ///
 /// In C# it is a <see cref="decimal"/>, and <see cref="Multiply"/> is exact integer arithmetic on that
 /// decimal, so a total computed from a unit price cannot drift.
+///
+/// An amount Anis sends may be negative: a wallet balance is below zero while the wallet uses allowed debt.
+/// Prices and totals are never negative, and an order still refuses a price that is not greater than zero.
 /// </remarks>
 [JsonConverter(typeof(MoneyConverter))]
 public readonly record struct Money(decimal Amount, string Currency, DateTimeOffset? AsOf = null)
 {
     /// <summary>The wire representation: scale exactly three.</summary>
-    public string ToWireAmount() => Amount.ToString("F3", CultureInfo.InvariantCulture);
+    public string ToWireAmount() => (Amount == 0 ? 0m : Amount).ToString("F3", CultureInfo.InvariantCulture);
 
     /// <summary>Multiplies by a whole quantity, exactly.</summary>
     public Money Multiply(int quantity) => this with { Amount = Amount * quantity, AsOf = null };
@@ -51,13 +54,14 @@ internal sealed class MoneyConverter : JsonConverter<Money>
                     // accepting one here would quietly admit a double that has already lost precision.
                     var text = reader.TokenType == JsonTokenType.String ? reader.GetString() : null;
 
-                    if (text is null || !Regex.IsMatch(text, @"\A[0-9]+\.[0-9]{3}\z", RegexOptions.CultureInvariant)
-                        || !decimal.TryParse(text, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var parsed))
+                    if (text is null || !Regex.IsMatch(text, @"\A-?[0-9]+\.[0-9]{3}\z", RegexOptions.CultureInvariant)
+                        || !decimal.TryParse(text, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var parsed))
                     {
-                        throw new JsonException("Money amount must be a nonnegative decimal string at scale three.");
+                        throw new JsonException("Money amount must be a decimal string at scale three.");
                     }
 
-                    amount = parsed;
+                    // "-0.000" is zero: a balance that reads as zero must never carry a sign.
+                    amount = parsed == 0 ? Math.Abs(parsed) : parsed;
                     break;
 
                 case "currency":
@@ -84,8 +88,8 @@ internal sealed class MoneyConverter : JsonConverter<Money>
     {
         ArgumentNullException.ThrowIfNull(writer);
 
-        if (value.Amount < 0 || decimal.Round(value.Amount, 3) != value.Amount || !ValidCurrency(value.Currency))
-            throw new JsonException("Money requires a nonnegative amount at scale three and an uppercase three-letter currency.");
+        if (decimal.Round(value.Amount, 3) != value.Amount || !ValidCurrency(value.Currency))
+            throw new JsonException("Money requires an amount at scale three and an uppercase three-letter currency.");
 
         writer.WriteStartObject();
         writer.WriteString("amount", value.ToWireAmount());

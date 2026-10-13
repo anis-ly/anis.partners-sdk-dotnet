@@ -2,6 +2,14 @@
 
 All notable changes to the `Anis.Partners` package. Versions follow [Semantic Versioning](https://semver.org).
 
+## [2.0.1] - Unreleased
+
+### Fixed
+
+- A wallet whose balance is below zero — while it uses allowed debt — can be read again. In 2.0.0, listing or reading such a wallet failed with an error. Amounts in Anis's answers may carry a leading minus sign (`-150.000`); `-0.000` reads as zero. Serializing a `Money` with a negative amount is allowed too, so a wallet in debt can be stored and written back.
+- Prices you send are unchanged: an order still refuses a unit price that is not greater than zero, before anything is sent.
+- Documentation: the money rule in the README; the live-certification note now says 2.x.
+
 ## [2.0.0] - 2026-10-13
 
 ### Breaking changes

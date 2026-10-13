@@ -199,7 +199,10 @@ public sealed class ModelFieldTests
     }
 
     [Theory]
-    [InlineData("{\"amount\":\"-1.000\",\"currency\":\"LYD\"}")]
+    [InlineData("{\"amount\":\"-1\",\"currency\":\"LYD\"}")]
+    [InlineData("{\"amount\":\"+1.000\",\"currency\":\"LYD\"}")]
+    [InlineData("{\"amount\":\"--1.000\",\"currency\":\"LYD\"}")]
+    [InlineData("{\"amount\":\"-1.0000\",\"currency\":\"LYD\"}")]
     [InlineData("{\"amount\":\"1.00\",\"currency\":\"LYD\"}")]
     [InlineData("{\"amount\":1.000,\"currency\":\"LYD\"}")]
     [InlineData("{\"amount\":\"1.000\",\"currency\":\"lyd\"}")]
@@ -208,9 +211,29 @@ public sealed class ModelFieldTests
         => Assert.Throws<JsonException>(() => Read<Money>(json));
 
     [Theory]
-    [InlineData(-1, "LYD")]
     [InlineData(1, "lyd")]
+    [InlineData(1, "LY")]
     public void Money_does_not_write_invalid_amounts_or_currencies(int amount, string currency)
         => Assert.Throws<JsonException>(() => JsonSerializer.Serialize(new Money(amount, currency), AnisJson.Options));
+
+    [Fact]
+    public void Money_does_not_write_an_amount_finer_than_three_places()
+        => Assert.Throws<JsonException>(() => JsonSerializer.Serialize(new Money(1.0004m, "LYD"), AnisJson.Options));
+
+    [Fact]
+    public void A_wallet_in_allowed_debt_reads_and_writes_its_negative_balance()
+    {
+        var wallet = Read<Wallet>("""{"id":"00000000-0000-0000-0000-000000000001","balance":{"amount":"-1250.075","currency":"LYD","asOf":"2026-10-14T08:00:00Z"}}""");
+
+        Assert.Equal(-1250.075m, wallet.Balance.Amount);
+        Assert.Equal("-1250.075", wallet.Balance.ToWireAmount());
+        Assert.Equal(
+            """{"amount":"-1250.075","currency":"LYD","asOf":"2026-10-14T08:00:00Z"}""",
+            JsonSerializer.Serialize(wallet.Balance, AnisJson.Options));
+    }
+
+    [Fact]
+    public void Negative_zero_on_the_wire_reads_as_zero()
+        => Assert.Equal("0.000", Read<Money>("""{"amount":"-0.000","currency":"LYD"}""").ToWireAmount());
 
 }

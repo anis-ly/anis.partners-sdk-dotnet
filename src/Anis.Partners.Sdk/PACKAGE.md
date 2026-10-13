@@ -1,6 +1,6 @@
 # Anis.Partners
 
-Version **2.0.0**. **1.x is deprecated — upgrade.**
+Version **2.0.1**. **1.x is deprecated — upgrade.**
 
 The .NET client for the Anis Partner API, for **.NET 8** and **.NET 10**.
 
@@ -9,7 +9,7 @@ signature self-check — is verified before you see it, and the operations are t
 shaped so they cannot go wrong quietly.
 
 ```bash
-dotnet add package Anis.Partners --version 2.0.0
+dotnet add package Anis.Partners --version 2.0.1
 ```
 
 ```csharp
