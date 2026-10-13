@@ -151,8 +151,8 @@ internal sealed class PartnerResponseVerifier(
         if (key.Status == "retired" && DateTimeOffset.FromUnixTimeSeconds(parsed.Created) > key.RetiredAt!.Value)
             throw Fail(ResponseVerificationFailure.KeyRetired, "The response was signed after this key retired.");
 
-        if (key.Status == "next" && DateTimeOffset.FromUnixTimeSeconds(parsed.Created) < key.NotBefore!.Value)
-            throw Fail(ResponseVerificationFailure.KeyNotYetValid, "The response was signed before this key becomes valid.");
+        if (DateTimeOffset.FromUnixTimeSeconds(parsed.Created) < key.NotBefore!.Value)
+            throw Fail(ResponseVerificationFailure.KeyNotYetValid, "The response was signed before this key became valid.");
 
         // 10-11. P1363 by shape, then by verification over the REBUILT base.
         var signatureBytes = ByteSequence(signature);

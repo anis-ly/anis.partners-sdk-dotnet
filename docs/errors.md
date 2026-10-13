@@ -42,7 +42,7 @@ One base type plus a small set of subclasses for the refusals callers actually b
 | `InsufficientBalanceException` | `insufficient_balance` | the wallet cannot cover the purchase |
 | `PriceChangedException` | `price_changed` | the price moved since the catalogue read |
 | `OutOfStockException` | `quantity_unavailable`, `card_unavailable` | not sellable in that quantity, or not at all, now |
-| `LimitExceededException` | `owner_limit_exceeded`, `daily_limit_exceeded` | the owner's spending allowance is used up — **do not poll** |
+| `LimitExceededException` | `owner_limit_exceeded`, `daily_limit_exceeded`, `spending_limit_exceeded` | a spending allowance is used up — **do not poll**; for the spending cap, `RetryAfter` says when a new order can succeed |
 | `RateLimitedException` | `rate_limited` | a request-rate limit; wait for `RetryAfter`, then send again — an order **resumes the same id** (it comes back as `OrderOutcomeUnknown`), never a new one |
 | `IdempotencyConflictException` | `idempotency_conflict` | one operation id used for two different orders |
 | `InvalidCredentialsException` | `invalid_credentials` | authentication failed (unknown, revoked, expired or replaced key; bad or stale signature; clock) |
@@ -57,7 +57,7 @@ One base type plus a small set of subclasses for the refusals callers actually b
 
 `malformed_signed_request` (400) means the signed request was badly built — a signature header missing or unreadable, the signed parts not the ones the route needs or not in its order, or a `Content-Digest` that cannot be read or does not describe the body. The SDK builds these itself, so with the SDK it points at something between you and Anis rewriting the request (a proxy that changes headers or the body). It is decided before any key is looked at and says nothing about your key. On an order it comes back as `OrderOutcomeUnknown` (suggested delay 60 seconds): fix what rewrites the request, then resume the same id — never a new one. `signature_expired` and `invalid_content_digest` are in the catalogue — and in `PartnerErrorCode` — but Anis does not send them: an expired signature arrives as `invalid_credentials`, a digest that does not describe the body as `malformed_signed_request`.
 
-All 38 public codes are in `PartnerErrorCode`, generated from the error catalogue, and a test pins every one
+All 39 public codes are in `PartnerErrorCode`, generated from the error catalogue, and a test pins every one
 of them to its exception type and its order outcome. A code this SDK version does not know arrives as
 `PartnerErrorCode.Unknown`, with its wire spelling in `RawCode`. On an order, a refusal marked replayed returns
 `OrderNotPlaced`; otherwise it returns `OrderOutcomeUnknown`, requiring a resume with the same operation id.
@@ -134,7 +134,8 @@ content is discarded and never reaches you.
 
 Treat it as an infrastructure or integrity problem, not a business one. The usual causes are an intercepting
 proxy that rewrites headers, a clock more than 60 seconds out, or a key rotation your key cache has not
-caught up with — the SDK already refreshes once on an unknown key version. One cause is Anis itself: when its
+caught up with — the SDK already refreshes on an unknown key version, at most once every 30 seconds. One cause
+is Anis itself: when its
 response signer is unavailable, the gateway answers a signed route with a deliberately unsigned `503`
 (`SignatureMissing`). The information reads do not need the signer and keep answering.
 
@@ -143,7 +144,7 @@ On a read, retry.
 
 For response verification, `ProfileUnexpected` means the required `anis-response-v2` tag is missing or differs.
 `KeyCompromised` means the response names a revoked signing key; `KeyRetired` means it was signed after that key's
-retirement; `KeyNotYetValid` means it was signed before a next key's activation. The complete closed vocabulary is
+retirement; `KeyNotYetValid` means it was signed before any published key's activation. The complete closed vocabulary is
 in [Security](security.md).
 
 Access stops report `validation_failed` (400) for an invalid reason, `resource_not_found` (404) for an unknown or

@@ -119,7 +119,10 @@ public enum PartnerErrorCode
     /// <summary>HTTP 403. Anis network protection blocked this source address. Contact Anis support with the address if it should be allowed.</summary>
     SourceIpNotAllowed = 32,
 
-    /// <summary>HTTP 422. The response never names the field: check the request against the documented rules before sending it again. How the request is sent counts too: a body over 64 KB, a chunked body (send Content-Length instead), headers over 32 KB in total, a path and query over 2,048 characters, a body on a call that takes none, or an order whose Idempotency-Key is missing or is not a UUID written with hyphens.</summary>
+    /// <summary>HTTP 429. The order was not placed: it would take the application's spending above its ceiling for the current period. Do not repeat it; after the Retry-After delay (the end of the period) submit a new operation and idempotency key, or ask Anis staff to change the ceiling.</summary>
+    SpendingLimitExceeded = 39,
+
+    /// <summary>HTTP 422. The response never names the field: check the request against the documented rules before sending it again. How the request is sent counts too: a body over 64 KB, an order body over 8,192 bytes, an order Content-Type with a charset other than UTF-8, a chunked body (send Content-Length instead), headers over 32 KB in total, a path and query over 2,048 characters, a body on a call that takes none, or an order whose Idempotency-Key is missing or is not a UUID written with hyphens.</summary>
     ValidationFailed = 33,
 
     /// <summary>HTTP 409. Submit a new request only after the wallet has been re-enabled.</summary>
@@ -171,6 +174,7 @@ public static class PartnerErrorCodes
         ["reveal_not_allowed"] = PartnerErrorCode.RevealNotAllowed,
         ["signature_expired"] = PartnerErrorCode.SignatureExpired,
         ["source_ip_not_allowed"] = PartnerErrorCode.SourceIpNotAllowed,
+        ["spending_limit_exceeded"] = PartnerErrorCode.SpendingLimitExceeded,
         ["validation_failed"] = PartnerErrorCode.ValidationFailed,
         ["wallet_disabled"] = PartnerErrorCode.WalletDisabled,
         ["wallet_expired"] = PartnerErrorCode.WalletExpired,

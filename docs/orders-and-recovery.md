@@ -178,6 +178,7 @@ This table classifies a first attempt. On a resume, every fresh (non-replayed) r
 | `allowed_debt_consent_required` | 402 | `AnisApiException` | OrderNotPlaced | New order with `UseAllowedDebt = true` — only if you mean to spend debt |
 | `owner_limit_exceeded` | 409 | `LimitExceededException` | OrderNotPlaced | The owner's allowance is used up. **Do not poll**; new order once it changes |
 | `daily_limit_exceeded` | 429 | `LimitExceededException` | OrderNotPlaced | The owner's daily limit. No reset time is given; **do not poll** |
+| `spending_limit_exceeded` | 429 | `LimitExceededException` | OrderNotPlaced | The application's or wallet's spending cap for this window is used up. Nothing was charged; after `RetryAfter`, place a **new** order with a **new** id |
 | `purchase_not_allowed` | 403 / 409 | `AuthorizationException` | OrderNotPlaced | An owner rule forbids this purchase |
 | `wallet_disabled`, `wallet_expired`, `business_subscription_required`, `account_inactive`, `binding_not_authorized` | 403 / 409 | `AuthorizationException` | OrderNotPlaced | The owner account, wallet or subscription needs attention on Anis's side |
 | `idempotency_conflict` | 409 | `IdempotencyConflictException` | OrderNotPlaced | This id already belongs to a **different** order — a bug on your side. That earlier order is untouched; use a new id |

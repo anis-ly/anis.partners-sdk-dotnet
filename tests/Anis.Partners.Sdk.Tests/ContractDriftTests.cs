@@ -155,7 +155,7 @@ public sealed class ContractDriftTests
     [Fact]
     public void A_released_error_code_keeps_its_number()
     {
-        // A partner's compiled switch holds these numbers. 1-36 shipped in 1.0.0; a new code only ever appends.
+        // A partner's compiled switch holds these numbers. A new code only ever appends.
         var released = new Dictionary<PartnerErrorCode, int>
         {
             [PartnerErrorCode.Unknown] = 0,
@@ -197,6 +197,7 @@ public sealed class ContractDriftTests
             [PartnerErrorCode.WalletNotGranted] = 36,
             [PartnerErrorCode.MalformedSignedRequest] = 37,
             [PartnerErrorCode.KeyNotRevocable] = 38,
+            [PartnerErrorCode.SpendingLimitExceeded] = 39,
         };
 
         Assert.All(released, pair => Assert.Equal(pair.Value, (int)pair.Key));

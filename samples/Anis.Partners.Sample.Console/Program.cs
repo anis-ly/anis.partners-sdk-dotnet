@@ -158,7 +158,7 @@ static async Task<int> EnrolAsync(
     var token = flags.GetValueOrDefault("token") ?? throw new ArgumentException("--token <enrollment token> is required.");
 
     using var keyClient = new HttpClient(wire()) { BaseAddress = authority };
-    var keys = new HttpSigningKeySource(keyClient, TimeSpan.FromMinutes(10), TimeProvider.System);
+    var keys = new HttpSigningKeySource(keyClient, AnisPartnersClientOptions.MaxSigningKeyCacheDuration, TimeProvider.System);
 
     using var enrollment = AnisEnrollmentClient.Create(authority, invitation, token, keys, wire());
 

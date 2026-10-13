@@ -109,7 +109,7 @@ From a settings file:
     "Authority": "https://<the authority Anis gave you>",
     "SignatureLifetime": "00:01:00",
     "AcceptLanguage": "Arabic",
-    "SigningKeyCacheDuration": "00:10:00",
+    "SigningKeyCacheDuration": "00:05:00",
     "Timeout": "00:00:30"
   }
 }
@@ -120,6 +120,8 @@ builder.Services
     .AddAnisPartners(builder.Configuration.GetSection(AnisPartnersClientOptions.SectionName))
     .WithSigner(EcdsaP256Signer.FromPemFile("/secure/partner-key.pem", keyId));
 ```
+
+`SigningKeyCacheDuration` is five minutes by default and at most five minutes.
 
 Or in code:
 

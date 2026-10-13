@@ -14,7 +14,7 @@ public sealed class ResponseVerificationTests
     private static readonly DateTimeOffset Now = PipelineFixture.Now;
 
     [Theory]
-    [InlineData("active", 1, null)]
+    [InlineData("active", 1, ResponseVerificationFailure.KeyNotYetValid)]
     [InlineData("next", -1, null)]
     [InlineData("next", 0, null)]
     [InlineData("next", 1, ResponseVerificationFailure.KeyNotYetValid)]
@@ -38,6 +38,35 @@ public sealed class ResponseVerificationTests
         {
             await verifier.VerifyAsync(response, TestContext.Current.CancellationToken);
         }
+    }
+
+    [Theory]
+    [InlineData("active")]
+    [InlineData("next")]
+    [InlineData("retired")]
+    public async Task A_key_of_any_status_is_refused_before_its_not_before(string status)
+    {
+        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var document = Document(key, status, Now.AddSeconds(100));
+        document = document with { Keys = [document.Keys[0] with { NotBefore = Now.AddSeconds(1) }] };
+
+        var refused = await Assert.ThrowsAsync<UnverifiableResponseException>(
+            async () => await Verifier(document).VerifyAsync(Response(key), TestContext.Current.CancellationToken));
+
+        Assert.Equal(ResponseVerificationFailure.KeyNotYetValid, refused.Failure);
+    }
+
+    [Theory]
+    [InlineData("active")]
+    [InlineData("next")]
+    [InlineData("retired")]
+    public async Task A_key_of_any_status_is_accepted_at_its_not_before(string status)
+    {
+        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var document = Document(key, status, Now.AddSeconds(100));
+        document = document with { Keys = [document.Keys[0] with { NotBefore = Now }] };
+
+        await Verifier(document).VerifyAsync(Response(key), TestContext.Current.CancellationToken);
     }
 
     [Theory]
@@ -73,6 +102,22 @@ public sealed class ResponseVerificationTests
 
         Assert.Equal(ResponseVerificationFailure.KeyCompromised, refused.Failure);
         Assert.Equal(1, source.Refreshes);
+    }
+
+    [Theory]
+    [InlineData("active")]
+    [InlineData("next")]
+    [InlineData("retired")]
+    public async Task A_not_before_100_microseconds_after_creation_is_refused(string status)
+    {
+        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var document = Document(key, status, Now.AddSeconds(100));
+        document = document with { Keys = [document.Keys[0] with { NotBefore = Now.AddTicks(1000) }] };
+
+        var failure = await Assert.ThrowsAsync<UnverifiableResponseException>(
+            async () => await Verifier(document).VerifyAsync(Response(key), TestContext.Current.CancellationToken));
+
+        Assert.Equal(ResponseVerificationFailure.KeyNotYetValid, failure.Failure);
     }
 
     [Theory]
@@ -202,7 +247,8 @@ public sealed class ResponseVerificationTests
             Keys = [new PublishedSigningKey
             {
                 Kid = KeyId, Kty = "EC", Crv = "P-256", X = Base64Url.Encode(point.X!), Y = Base64Url.Encode(point.Y!),
-                Status = status, NotBefore = boundary ?? Now.AddDays(-1), RetiredAt = status == "retired" ? boundary : null,
+                Status = status, NotBefore = status == "retired" ? Now.AddDays(-1) : boundary ?? Now.AddDays(-1),
+                RetiredAt = status == "retired" ? boundary : null,
             }],
         };
     }

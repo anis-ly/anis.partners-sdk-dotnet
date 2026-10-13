@@ -54,7 +54,7 @@ internal static partial class Log
     [LoggerMessage(
         EventId = 1006,
         Level = LogLevel.Warning,
-        Message = "Anis signed a response with key {KeyId}, which this client had not seen; refreshing the key document once.")]
+        Message = "Anis signed a response with key {KeyId}, which this client had not seen; requesting a key-document refresh (at most once per 30 seconds).")]
     public static partial void UnknownSigningKey(ILogger logger, string keyId);
 
     [LoggerMessage(

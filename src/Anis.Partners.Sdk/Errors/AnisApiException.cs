@@ -160,11 +160,14 @@ public sealed class IdempotencyConflictException(Problem problem, HttpStatusCode
 public sealed class RateLimitedException(Problem problem, HttpStatusCode status, TimeSpan? retryAfter = null, bool isReplayed = false)
     : AnisApiException(problem, status, retryAfter, isReplayed);
 
-/// <summary>An owner spending allowance is used up. Do NOT poll.</summary>
+/// <summary>An owner or application spending allowance is used up. Do NOT poll.</summary>
 /// <remarks>
 /// <c>owner_limit_exceeded</c> and <c>daily_limit_exceeded</c>: the account owner's own allowance, not a
 /// request rate. There is no reset time, so waiting and retrying does not help. The order is closed and
 /// nothing was charged; place a new order under a new operation id only once you know the allowance changed.
+/// <c>spending_limit_exceeded</c>: the application's or wallet's spending cap for the current window.
+/// Nothing was charged and the order is closed; <see cref="AnisApiException.RetryAfter"/> is when the window
+/// ends — place a NEW order with a NEW operation id after it, never resume this one.
 /// </remarks>
 public sealed class LimitExceededException(Problem problem, HttpStatusCode status, TimeSpan? retryAfter = null, bool isReplayed = false)
     : AnisApiException(problem, status, retryAfter, isReplayed);
@@ -335,7 +338,7 @@ internal static class AnisApiExceptionFactory
                 => new OutOfStockException(problem, status, retryAfter, replayed),
             PartnerErrorCode.IdempotencyConflict => new IdempotencyConflictException(problem, status, retryAfter, replayed),
             PartnerErrorCode.RateLimited => new RateLimitedException(problem, status, retryAfter, replayed),
-            PartnerErrorCode.OwnerLimitExceeded or PartnerErrorCode.DailyLimitExceeded
+            PartnerErrorCode.OwnerLimitExceeded or PartnerErrorCode.DailyLimitExceeded or PartnerErrorCode.SpendingLimitExceeded
                 => new LimitExceededException(problem, status, retryAfter, replayed),
             PartnerErrorCode.InvalidCredentials or PartnerErrorCode.SignatureExpired
                 => new InvalidCredentialsException(problem, status, retryAfter, replayed),

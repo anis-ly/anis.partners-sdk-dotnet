@@ -88,7 +88,9 @@ appears in reveals and order `SoldCards`. Catalogue cards include `Logo` and `Ca
 scale three with an uppercase three-letter currency. Owned-card routes use `/owned-cards`.
 
 Signed answers require `tag="anis-response-v2"` and bind both request signature headers. The verifier refuses
-compromised keys, signatures after a key's retirement and signatures before a next key's activation. See
+compromised keys, signatures after a key's retirement and signatures before any published key's activation.
+The key document is cached for five minutes by default and at most; an unknown key triggers a refresh at most
+once every 30 seconds. Retired keys remain published for 90 days after retirement. See
 [Security](docs/security.md) for the closed verification failure vocabulary.
 
 Buying is deliberately less convenient — see [Orders and recovery](docs/orders-and-recovery.md):
@@ -162,7 +164,7 @@ discard the unverified content.
 ## What is covered
 
 All 22 published routes, in seven operation groups — `Access`, `Profile`, `Wallets`, `Catalogue`, `Orders`,
-`OwnedCards`, `Diagnostics` — plus `AnisEnrollmentClient` for bootstrap. 38 public error codes, generated
+`OwnedCards`, `Diagnostics` — plus `AnisEnrollmentClient` for bootstrap. 39 public error codes, generated
 from the error catalogue, each pinned by a test to its exception type and its order outcome. The signature
 self-check (`Diagnostics`) needs `diagnostics:use` and is the right first call when a signature will not
 verify, because it reports the exact facts the gateway built its base from.
