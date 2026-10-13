@@ -2,7 +2,7 @@
 
 All notable changes to the `Anis.Partners` package. Versions follow [Semantic Versioning](https://semver.org).
 
-## [2.0.0] - 2026-10-11
+## [2.0.0] - 2026-10-13
 
 ### Breaking changes
 
