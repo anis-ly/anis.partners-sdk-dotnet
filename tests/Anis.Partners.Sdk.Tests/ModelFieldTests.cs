@@ -26,6 +26,20 @@ public sealed class ModelFieldTests
     public void A_subcategory_without_a_disclaimer_has_none()
         => Assert.Null(Read<CatalogueSubcategory>("""{"id":"7a1c3e5f-2b4d-4f68-8a0c-9e1b3d5f7a2c"}""").Disclaimer);
 
+    [Theory]
+    [InlineData("local", CatalogueCategoryType.Local)]
+    [InlineData("international", CatalogueCategoryType.International)]
+    public void A_subcategory_reads_its_category_type(string type, CatalogueCategoryType expected)
+        => Assert.Equal(expected, Read<CatalogueSubcategory>($"{{\"categoryType\":\"{type}\"}}").CategoryType);
+
+    [Fact]
+    public void A_subcategory_without_a_category_type_has_unknown_type()
+        => Assert.Equal(CatalogueCategoryType.Unknown, Read<CatalogueSubcategory>("{}").CategoryType);
+
+    [Fact]
+    public void A_subcategory_with_an_unknown_category_type_has_unknown_type()
+        => Assert.Equal(CatalogueCategoryType.Unknown, Read<CatalogueSubcategory>("""{"categoryType":"galactic"}""").CategoryType);
+
     [Fact]
     public void A_catalogue_card_reads_its_quantity_limits()
     {
@@ -132,16 +146,39 @@ public sealed class ModelFieldTests
     [Fact]
     public void A_catalogue_card_reads_its_logo_and_category()
     {
-        var card = Read<CatalogueCard>("""{"id":"8d4b1e73-9a25-4c60-8f37-6b2e9d5a1c48","logo":"https://assets.anis.ly/card.png","category":{"id":"6e3b9d27-1f84-4a5c-b0d6-8c2e7f4a9b13","name":{"en":"Local"}}}""");
+        var card = Read<CatalogueCard>("""{"id":"8d4b1e73-9a25-4c60-8f37-6b2e9d5a1c48","logo":"https://assets.anis.ly/card.png","category":{"id":"6e3b9d27-1f84-4a5c-b0d6-8c2e7f4a9b13","name":{"en":"Local"},"type":"local"}}""");
         Assert.Equal("https://assets.anis.ly/card.png", card.Logo);
+        Assert.Equal(Guid.Parse("6e3b9d27-1f84-4a5c-b0d6-8c2e7f4a9b13"), card.Category?.Id);
         Assert.Equal("Local", card.Category?.Name?.En);
+        Assert.Equal(CatalogueCategoryType.Local, card.Category?.Type);
     }
+
+    [Theory]
+    [InlineData("local", CatalogueCategoryType.Local)]
+    [InlineData("international", CatalogueCategoryType.International)]
+    public void A_catalogue_card_reads_its_category_type(string type, CatalogueCategoryType expected)
+        => Assert.Equal(expected, Read<CatalogueCard>($"{{\"category\":{{\"type\":\"{type}\"}}}}").Category?.Type);
+
+    [Fact]
+    public void A_catalogue_card_category_without_a_type_has_unknown_type()
+    {
+        var category = Read<CatalogueCard>("""{"category":{"id":"6e3b9d27-1f84-4a5c-b0d6-8c2e7f4a9b13","name":{"en":"Local"}}}""").Category;
+
+        Assert.Equal(CatalogueCategoryType.Unknown, category?.Type);
+        Assert.Equal(Guid.Parse("6e3b9d27-1f84-4a5c-b0d6-8c2e7f4a9b13"), category?.Id);
+        Assert.Equal("Local", category?.Name?.En);
+    }
+
+    [Fact]
+    public void A_catalogue_card_category_with_an_unknown_type_has_unknown_type()
+        => Assert.Equal(CatalogueCategoryType.Unknown, Read<CatalogueCard>("""{"category":{"type":"galactic"}}""").Category?.Type);
 
     [Fact]
     public void A_subcategory_list_item_reads_its_description()
     {
-        var page = Read<Page<CatalogueSubcategory>>("""{"items":[{"id":"7a1c3e5f-2b4d-4f68-8a0c-9e1b3d5f7a2c","description":{"en":"Games"}}]}""");
+        var page = Read<Page<CatalogueSubcategory>>("""{"items":[{"id":"7a1c3e5f-2b4d-4f68-8a0c-9e1b3d5f7a2c","categoryId":"6e3b9d27-1f84-4a5c-b0d6-8c2e7f4a9b13","categoryType":"international","description":{"en":"Games"}}]}""");
         Assert.Equal("Games", Assert.Single(page.Items).Description?.En);
+        Assert.Equal(CatalogueCategoryType.International, Assert.Single(page.Items).CategoryType);
     }
 
     [Fact]

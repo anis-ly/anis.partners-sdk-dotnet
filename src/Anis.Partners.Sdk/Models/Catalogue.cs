@@ -60,6 +60,9 @@ public sealed record CatalogueSubcategory
     /// <summary>The category this belongs to.</summary>
     [JsonPropertyName("categoryId")] public Guid CategoryId { get; init; }
 
+    /// <summary>Local or international.</summary>
+    [JsonPropertyName("categoryType")] public CatalogueCategoryType CategoryType { get; init; }
+
     /// <summary>Display name.</summary>
     [JsonPropertyName("name")] public LocalizedText? Name { get; init; }
 
@@ -110,7 +113,7 @@ public sealed record CatalogueCard
     [JsonPropertyName("logo")] public string? Logo { get; init; }
 
     /// <summary>The category the card belongs to.</summary>
-    [JsonPropertyName("category")] public CardClassification? Category { get; init; }
+    [JsonPropertyName("category")] public CatalogueCardCategory? Category { get; init; }
 
     /// <summary>
     /// The price THIS wallet pays for one card now — the one an order is checked against. Send it as
@@ -146,6 +149,19 @@ public sealed record CatalogueCard
     /// The platform order limit: 100 cards.
     /// </summary>
     [JsonPropertyName("maximumQuantity")] public int? MaximumQuantity { get; init; }
+}
+
+/// <summary>The catalogue category a card belongs to.</summary>
+public sealed record CatalogueCardCategory
+{
+    /// <summary>Identifier.</summary>
+    [JsonPropertyName("id")] public Guid Id { get; init; }
+
+    /// <summary>Display name.</summary>
+    [JsonPropertyName("name")] public LocalizedText? Name { get; init; }
+
+    /// <summary>Local or international.</summary>
+    [JsonPropertyName("type")] public CatalogueCategoryType Type { get; init; }
 }
 
 /// <summary>One page of a cursor-paged list.</summary>

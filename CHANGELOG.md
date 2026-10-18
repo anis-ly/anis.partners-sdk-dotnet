@@ -2,6 +2,13 @@
 
 All notable changes to the `Anis.Partners` package. Versions follow [Semantic Versioning](https://semver.org).
 
+## [2.1.0] - Unreleased
+
+### Added
+
+- Catalogue subcategories expose `CategoryType` (`local` or `international`), defaulting to unknown when absent or unrecognized.
+- Catalogue cards expose category `Type` (`local` or `international`), defaulting to unknown when absent or unrecognized. Owned cards, reveals and orders are unchanged.
+
 ## [2.0.1] - 2026-10-13
 
 ### Fixed
