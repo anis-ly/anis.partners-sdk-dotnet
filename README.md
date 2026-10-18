@@ -1,6 +1,6 @@
 # Anis.Partners — .NET SDK
 
-Version **2.0.1**. **1.x is deprecated — upgrade.**
+Version **2.1.0**. **1.x is deprecated — upgrade.**
 
 The .NET client for the Anis Partner API. Targets **net8.0** and **net10.0**.
 
@@ -9,7 +9,7 @@ to get dangerously wrong — the idempotency key, the credential-once rule, reco
 verification — are shaped so you cannot get them wrong quietly.
 
 ```bash
-dotnet add package Anis.Partners --version 2.0.1
+dotnet add package Anis.Partners --version 2.1.0
 ```
 
 - [Getting started](docs/getting-started.md) — enrollment, registration (one application or several), first call
@@ -83,8 +83,9 @@ var revoked = await anis.Access.RevokeKeyAsync(keyId, "Key exposed", ct);
 ```
 
 `MaskedCard` uses `SoldCardId` and `OperationId`; product details are in `CardSummary` (`Card`). The same summary
-appears in reveals and order `SoldCards`. Catalogue cards include `Logo` and `Category`; subcategory lists include
-`Description`. Wallet currency is `Balance.Currency`. All amounts use `Money`, a decimal string at scale three
+appears in reveals and order `SoldCards`. Catalogue cards include `Logo` and `Category` (`Category.Type` is local
+or international); subcategories include `CategoryType` and `Description`. Wallet currency is `Balance.Currency`.
+All amounts use `Money`, a decimal string at scale three
 with an uppercase three-letter currency. A wallet balance is negative (for example `-150.000`) while the wallet uses
 allowed debt; prices and totals are never negative. Owned-card routes use `/owned-cards`.
 

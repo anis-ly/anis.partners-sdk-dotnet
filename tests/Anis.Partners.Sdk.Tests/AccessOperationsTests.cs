@@ -38,7 +38,7 @@ public sealed class AccessOperationsTests
 
         var request = fixture.Stub.LastRequest!;
         Assert.Equal(HttpMethod.Post, request.Method);
-        Assert.Equal("Anis.Partners/2.0.1", request.Headers.UserAgent.ToString());
+        Assert.Equal("Anis.Partners/2.1.0", request.Headers.UserAgent.ToString());
         Assert.Equal(revoke ? $"/v1/keys/{Key:D}/revoke" : "/v1/application/suspend", request.RequestUri!.AbsolutePath);
         Assert.Equal("{\"reason\":\"Key exposed\"}", Encoding.UTF8.GetString(fixture.Stub.LastRequestBody!));
         Assert.Equal("application/json", request.Content!.Headers.ContentType!.MediaType);

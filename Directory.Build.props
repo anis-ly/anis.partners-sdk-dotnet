@@ -32,6 +32,6 @@
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
 
     <!-- The release workflow may set Version from its tag. -->
-    <Version Condition="'$(Version)' == ''">2.0.1</Version>
+    <Version Condition="'$(Version)' == ''">2.1.0</Version>
   </PropertyGroup>
 </Project>
