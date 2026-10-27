@@ -14,7 +14,8 @@ internal sealed class PipelineFixture : IDisposable
     private readonly ECDsa _responseKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
     private readonly EcdsaP256Signer _signer;
 
-    public PipelineFixture(ILoggerFactory? loggers = null, IRequestSigner? signer = null)
+    public PipelineFixture(ILoggerFactory? loggers = null, IRequestSigner? signer = null,
+        INonceFactory? nonces = null, ISigningKeySource? keys = null)
     {
         _signer = EcdsaP256Signer.FromEcdsa(_requestKey, Guid.NewGuid());
 
@@ -23,7 +24,7 @@ internal sealed class PipelineFixture : IDisposable
         var parameters = _responseKey.ExportParameters(includePrivateParameters: false);
 
         var verifier = new PartnerResponseVerifier(
-            new StaticSigningKeySource(new PartnerSigningKeySet
+            keys ?? new StaticSigningKeySource(new PartnerSigningKeySet
             {
                 Keys =
                 [
@@ -45,7 +46,7 @@ internal sealed class PipelineFixture : IDisposable
         var signing = new PartnerSigningHandler(
             new PartnerRequestSigner(signer ?? _signer),
             new FixedTimeProvider(Now),
-            new FixedNonceFactory(),
+            nonces ?? new FixedNonceFactory(),
             TimeSpan.FromSeconds(60),
             loggers?.CreateLogger<PartnerSigningHandler>())
         {

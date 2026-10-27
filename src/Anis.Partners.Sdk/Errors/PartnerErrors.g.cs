@@ -23,6 +23,9 @@ public enum PartnerErrorCode
     /// <summary>HTTP 402. Submit a new operation with explicit allowed-debt consent if the Partner intends to use debt.</summary>
     AllowedDebtConsentRequired = 2,
 
+    /// <summary>HTTP 422. Choose an amount within the quoted limits.</summary>
+    AmountOutOfRange = 40,
+
     /// <summary>HTTP 403. Restore the directly owned active account and Business subscription before making a new request.</summary>
     BindingNotAuthorized = 3,
 
@@ -47,7 +50,13 @@ public enum PartnerErrorCode
     /// <summary>HTTP 503, retryable. Retry with the same idempotency key for the same mutation intent after bounded backoff.</summary>
     DependencyUnavailable = 10,
 
-    /// <summary>HTTP 409. Reuse the key only for identical intent; use a new UUID only for a genuinely new operation.</summary>
+    /// <summary>HTTP 409. Read the direct recharge; recipient changes require suspendedDataError.</summary>
+    DirectRechargeNotSuspended = 41,
+
+    /// <summary>HTTP 409. Choose an available transfer priced for this wallet tier.</summary>
+    DirectRechargeProductUnavailable = 42,
+
+    /// <summary>HTTP 409. Reuse the key only for identical intent. This code does not say the original request failed: it may already have been accepted and charged, so never assume nothing was charged; read the original operation by its id (the meter charge or the direct recharge) before any new attempt. A repeated create whose id is still unknown to this application a minute after it was admitted also closes as idempotency_conflict (409); use a new UUID only for a genuinely new operation.</summary>
     IdempotencyConflict = 11,
 
     /// <summary>HTTP 409. Submit a new operation only after the authoritative balance or allowed-debt state changes.</summary>
@@ -83,11 +92,23 @@ public enum PartnerErrorCode
     /// <summary>HTTP 400. Rebuild how the request is signed: send both Signature and Signature-Input, cover the required components in the documented order, send every header the route requires, and compute Content-Digest over the exact body bytes. Repeating the same request unchanged fails the same way.</summary>
     MalformedSignedRequest = 37,
 
-    /// <summary>HTTP 202, retryable. Not an error: the order was accepted and is still being processed. Wait for the Retry-After delay, then repeat the identical POST with the same Idempotency-Key.</summary>
+    /// <summary>HTTP 422. Correct the meter number and use a new Idempotency-Key for a new attempt.</summary>
+    MeterRejected = 43,
+
+    /// <summary>HTTP 409. Anis added this network, so only Anis can remove it, or it is the last network the application has. Contact Anis support to change it.</summary>
+    NetworkNotRemovable = 47,
+
+    /// <summary>HTTP 202, retryable. Not an error: the operation is still processing. Respect Retry-After; read its Location or repeat the identical create with the same Idempotency-Key.</summary>
     OperationProcessing = 21,
 
     /// <summary>HTTP 409. Do not poll; submit a new operation and idempotency key only after the owner allowance is known to have changed.</summary>
     OwnerLimitExceeded = 22,
+
+    /// <summary>HTTP 409. Choose an available package and use a new Idempotency-Key.</summary>
+    PackageUnavailable = 44,
+
+    /// <summary>HTTP 409. The application already has the most addresses a Partner may add. Remove one you added, or ask Anis to allow the network.</summary>
+    PartnerNetworkLimitReached = 48,
 
     /// <summary>HTTP 409. Refresh the current price and explicitly accept it in a new operation.</summary>
     PriceChanged = 23,
@@ -119,10 +140,10 @@ public enum PartnerErrorCode
     /// <summary>HTTP 403. Anis network protection blocked this source address. Contact Anis support with the address if it should be allowed.</summary>
     SourceIpNotAllowed = 32,
 
-    /// <summary>HTTP 429. The order was not placed: it would take the application's spending above its ceiling for the current period. Do not repeat it; after the Retry-After delay (the end of the period) submit a new operation and idempotency key, or ask Anis staff to change the ceiling.</summary>
+    /// <summary>HTTP 429. The operation was not accepted: it would take the application's spending above its ceiling for the current period. Do not repeat it; after the Retry-After delay (the end of the period) submit a new operation and idempotency key, or ask Anis staff to change the ceiling.</summary>
     SpendingLimitExceeded = 39,
 
-    /// <summary>HTTP 422. The response never names the field: check the request against the documented rules before sending it again. How the request is sent counts too: a body over 64 KB, an order body over 8,192 bytes, an order Content-Type with a charset other than UTF-8, a chunked body (send Content-Length instead), headers over 32 KB in total, a path and query over 2,048 characters, a body on a call that takes none, or an order whose Idempotency-Key is missing or is not a UUID written with hyphens.</summary>
+    /// <summary>HTTP 422. Check the request model and framing. Money-operation creates and recipient updates accept at most 8192 UTF-8 body bytes. Recipient validation of a direct recharge may return safe messages in extensions.fields; other validation does not identify fields. Preserve the same key for unchanged accepted intent; a corrected business intent needs a new key.</summary>
     ValidationFailed = 33,
 
     /// <summary>HTTP 409. Submit a new request only after the wallet has been re-enabled.</summary>
@@ -133,6 +154,12 @@ public enum PartnerErrorCode
 
     /// <summary>HTTP 404. Obtain an approved current wallet grant before making a new request.</summary>
     WalletNotGranted = 36,
+
+    /// <summary>HTTP 422. Use HTTPS on port 443 with a host name, no user-info or fragment, and at most 2048 characters.</summary>
+    WebhookEndpointInvalid = 45,
+
+    /// <summary>HTTP 409. Set an endpoint and complete its verification before testing or redelivering.</summary>
+    WebhookEndpointUnverified = 46,
 }
 
 /// <summary>Maps between the wire code and <see cref="PartnerErrorCode"/>, and reports retryability.</summary>
@@ -142,6 +169,7 @@ public static class PartnerErrorCodes
     {
         ["account_inactive"] = PartnerErrorCode.AccountInactive,
         ["allowed_debt_consent_required"] = PartnerErrorCode.AllowedDebtConsentRequired,
+        ["amount_out_of_range"] = PartnerErrorCode.AmountOutOfRange,
         ["binding_not_authorized"] = PartnerErrorCode.BindingNotAuthorized,
         ["business_subscription_required"] = PartnerErrorCode.BusinessSubscriptionRequired,
         ["card_not_found"] = PartnerErrorCode.CardNotFound,
@@ -150,6 +178,8 @@ public static class PartnerErrorCodes
         ["currency_not_supported"] = PartnerErrorCode.CurrencyNotSupported,
         ["daily_limit_exceeded"] = PartnerErrorCode.DailyLimitExceeded,
         ["dependency_unavailable"] = PartnerErrorCode.DependencyUnavailable,
+        ["direct_recharge_not_suspended"] = PartnerErrorCode.DirectRechargeNotSuspended,
+        ["direct_recharge_product_unavailable"] = PartnerErrorCode.DirectRechargeProductUnavailable,
         ["idempotency_conflict"] = PartnerErrorCode.IdempotencyConflict,
         ["insufficient_balance"] = PartnerErrorCode.InsufficientBalance,
         ["insufficient_scope"] = PartnerErrorCode.InsufficientScope,
@@ -162,8 +192,12 @@ public static class PartnerErrorCodes
         ["key_not_revocable"] = PartnerErrorCode.KeyNotRevocable,
         ["key_proof_invalid"] = PartnerErrorCode.KeyProofInvalid,
         ["malformed_signed_request"] = PartnerErrorCode.MalformedSignedRequest,
+        ["meter_rejected"] = PartnerErrorCode.MeterRejected,
+        ["network_not_removable"] = PartnerErrorCode.NetworkNotRemovable,
         ["operation_processing"] = PartnerErrorCode.OperationProcessing,
         ["owner_limit_exceeded"] = PartnerErrorCode.OwnerLimitExceeded,
+        ["package_unavailable"] = PartnerErrorCode.PackageUnavailable,
+        ["partner_network_limit_reached"] = PartnerErrorCode.PartnerNetworkLimitReached,
         ["price_changed"] = PartnerErrorCode.PriceChanged,
         ["purchase_not_allowed"] = PartnerErrorCode.PurchaseNotAllowed,
         ["quantity_unavailable"] = PartnerErrorCode.QuantityUnavailable,
@@ -179,6 +213,8 @@ public static class PartnerErrorCodes
         ["wallet_disabled"] = PartnerErrorCode.WalletDisabled,
         ["wallet_expired"] = PartnerErrorCode.WalletExpired,
         ["wallet_not_granted"] = PartnerErrorCode.WalletNotGranted,
+        ["webhook_endpoint_invalid"] = PartnerErrorCode.WebhookEndpointInvalid,
+        ["webhook_endpoint_unverified"] = PartnerErrorCode.WebhookEndpointUnverified,
     };
 
     private static readonly HashSet<PartnerErrorCode> Retryable =

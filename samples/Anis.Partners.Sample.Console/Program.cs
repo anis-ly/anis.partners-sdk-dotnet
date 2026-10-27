@@ -4,6 +4,7 @@ using Anis.Partners.Sdk;
 using Anis.Partners.Sdk.DependencyInjection;
 using Anis.Partners.Sdk.Enrollment;
 using Anis.Partners.Sdk.Errors;
+using Anis.Partners.Sdk.Models;
 using Anis.Partners.Sdk.Signing;
 using Anis.Partners.Sdk.Verification;
 using Microsoft.Extensions.Configuration;
@@ -69,6 +70,11 @@ try
         new OrderJournal(sample.OrdersFolder),
         showSecrets: flags.ContainsKey("show-secrets"));
 
+    var products = new ProductCommands(
+        provider.GetRequiredService<IAnisPartnersClient>(),
+        new ProductJournal(Path.Combine(sample.OrdersFolder, "products")),
+        showSecrets: flags.ContainsKey("show-secrets"));
+
     Task run = command switch
     {
         "tour" => commands.TourAsync(ct),
@@ -98,6 +104,51 @@ try
         "owned-card" => commands.OwnedCardAsync(Arguments.Id(positional, 0, "wallet id"), Arguments.Id(positional, 1, "sold card id"), ct),
         "reveal" => commands.RevealAsync(Arguments.Id(positional, 0, "wallet id"), Arguments.Id(positional, 1, "sold card id"), ct),
         "reveal-invoice" => commands.RevealInvoiceAsync(Arguments.Id(positional, 0, "wallet id"), Arguments.Id(positional, 1, "invoice id"), ct),
+        "meter-packages" => products.MeterPackagesAsync(Arguments.Id(positional, 0, "wallet id"), ct),
+        "meter-charges" => products.MeterChargesAsync(Arguments.Id(positional, 0, "wallet id"), ct),
+        "meter-charge" => products.MeterChargeAsync(
+            Arguments.Id(positional, 0, "wallet id"),
+            Arguments.Id(positional, 1, "package id"),
+            Arguments.At(positional, 2, "meter number"),
+            flags.GetValueOrDefault("reference") ?? string.Empty,
+            flags.TryGetValue("operation", out var meterOperation) ? Guid.Parse(meterOperation!) : null,
+            ct),
+        "meter-resume" => products.MeterResumeAsync(Arguments.Id(positional, 0, "operation id"), ct),
+        "meter-status" => products.MeterStatusAsync(Arguments.Id(positional, 0, "operation id"), ct),
+        "recharge-products" => products.RechargeProductsAsync(Arguments.Id(positional, 0, "wallet id"), ct),
+        "recharge-product" => products.RechargeProductAsync(Arguments.Id(positional, 0, "wallet id"), Arguments.Id(positional, 1, "product id"), ct),
+        "recharge-locations" => products.RechargeLocationsAsync(
+            Arguments.Id(positional, 0, "wallet id"), Arguments.Id(positional, 1, "product id"), flags.GetValueOrDefault("search"), ct),
+        "recharge-quote" => products.RechargeQuoteAsync(
+            Arguments.Id(positional, 0, "wallet id"),
+            Arguments.Id(positional, 1, "product id"),
+            Arguments.At(positional, 2, "amount"),
+            Arguments.At(positional, 3, "lyd or fx") switch
+            {
+                "lyd" => DirectRechargeAmountIn.Lyd,
+                "fx" => DirectRechargeAmountIn.Fx,
+                _ => throw new ArgumentException("<lyd or fx> must be lyd or fx."),
+            },
+            ct),
+        "recharges" => products.RechargeListAsync(Arguments.Id(positional, 0, "wallet id"), ct),
+        "recharge" => products.RechargeAsync(
+            Arguments.Id(positional, 0, "wallet id"),
+            Arguments.Id(positional, 1, "product id"),
+            Arguments.At(positional, 2, "payout amount"),
+            positional.Skip(3).ToList(),
+            flags.GetValueOrDefault("note"),
+            flags.GetValueOrDefault("reference"),
+            flags.TryGetValue("operation", out var rechargeOperation) ? Guid.Parse(rechargeOperation!) : null,
+            ct),
+        "recharge-resume" => products.RechargeResumeAsync(Arguments.Id(positional, 0, "operation id"), ct),
+        "recharge-status" => products.RechargeStatusAsync(Arguments.Id(positional, 0, "operation id"), ct),
+        "recipient" => products.RecipientAsync(Arguments.Id(positional, 0, "operation id"), positional.Skip(1).ToList(), ct),
+        "webhook-status" => products.WebhookStatusAsync(ct),
+        "webhook-set" => products.WebhookSetAsync(Arguments.At(positional, 0, "url"), ct),
+        "webhook-test" => products.WebhookTestAsync(ct),
+        "webhook-events" => products.WebhookEventsAsync(
+            flags.TryGetValue("status", out var deliveryStatus) ? Enum.Parse<WebhookDeliveryStatus>(deliveryStatus!, ignoreCase: true) : null, ct),
+        "webhook-redeliver" => products.WebhookRedeliverAsync(Arguments.Id(positional, 0, "event id"), ct),
         "diagnostic" => commands.DiagnosticAsync(ct),
         "signing-keys" => commands.SigningKeysAsync(ct),
         _ => throw new ArgumentException($"Unknown command '{command}'. Run with no arguments for the list."),
@@ -233,6 +284,17 @@ internal static class Arguments
                 [--operation <id>] [--expected-unit-price <amount>]
           resume <operation>                          same id, same recorded body (also an idempotent repeat)
           order-status <operation>
+          meter-packages <wallet> | meter-charges <wallet>
+          meter-charge <wallet> <package> <meter number> [--reference <text>] [--operation <id>]
+          meter-resume <operation> | meter-status <operation>
+          recharge-products <wallet> | recharge-product <wallet> <product>
+          recharge-locations <wallet> <product> [--search <text>]
+          recharge-quote <wallet> <product> <amount> <lyd|fx> | recharges <wallet>
+          recharge <wallet> <product> <payout amount> <Key=value>... [--note <text>] [--reference <text>] [--operation <id>]
+          recharge-resume <operation> | recharge-status <operation>
+          recipient <operation> <Key=value>...        correct the recipient of a paused direct recharge
+          webhook-status | webhook-set <url> | webhook-test
+          webhook-events [--status <status>] | webhook-redeliver <event>
           owned <wallet> | owned-card <wallet> <sold card>
           reveal <wallet> <sold card> | reveal-invoice <wallet> <invoice>
           diagnostic | signing-keys

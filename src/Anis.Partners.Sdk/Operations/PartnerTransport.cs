@@ -28,7 +28,7 @@ internal sealed class PartnerTransport(
     AnisPartnersClientOptions options,
     ILogger<PartnerTransport>? logger = null)
 {
-    private const string UserAgent = "Anis.Partners/2.1.0";
+    private const string UserAgent = "Anis.Partners/2.2.0";
 
     private readonly ILogger _logger = logger ?? NullLogger<PartnerTransport>.Instance;
 
@@ -58,8 +58,57 @@ internal sealed class PartnerTransport(
 
     /// <summary>An access stop: a nonce mutation with a JSON body covered by its digest.</summary>
     public Task<T> PostNonceMutationAsync<T, TBody>(string route, string path, TBody body, CancellationToken cancellationToken)
-        => SendAsync<T>(HttpMethod.Post, route, path, SignatureProfile.BodylessNonceMutation,
-            JsonContent.Create(body, options: AnisJson.Options), cancellationToken);
+        => SendNonceMutationAsync<T, TBody>(HttpMethod.Post, route, path, body, cancellationToken);
+
+    /// <summary>A nonce change with a JSON body, without an idempotency key.</summary>
+    public async Task<T> SendNonceMutationAsync<T, TBody>(HttpMethod method, string route, string path, TBody body, CancellationToken cancellationToken)
+    {
+        var (response, bytes) = await SendNonceMutationResponseAsync(method, route, path, body, cancellationToken).ConfigureAwait(false);
+        using (response)
+            return JsonSerializer.Deserialize<T>(bytes, AnisJson.Options)
+                ?? throw AnisApiExceptionFactory.EmptyBody(response.StatusCode);
+    }
+
+    public async Task<(HttpResponseMessage Response, byte[] Body)> SendNonceMutationResponseAsync<TBody>(
+        HttpMethod method, string route, string path, TBody body, CancellationToken cancellationToken)
+    {
+        using var activity = StartActivity(method, route, operationId: null);
+        var started = Stopwatch.GetTimestamp();
+        using var request = Build(method, route, path, SignatureProfile.BodylessNonceMutation);
+        request.Content = JsonContent.Create(body, options: AnisJson.Options);
+        var (response, bytes) = await ExchangeAsync(request, method, route, activity, started, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            var failure = Refuse(method, route, bytes, response, activity, started);
+            response.Dispose();
+            throw failure;
+        }
+        Complete(activity, method, route, response, started, errorCode: null);
+        if (PartnerRoutes.Find(method, route).SuccessStatus is { } expected && response.StatusCode != expected)
+        {
+            response.Dispose();
+            throw new JsonException("The signed change response does not have the published success status.");
+        }
+        return (response, bytes);
+    }
+
+    /// <summary>Returns a verified product read with its HTTP status and outcome headers.</summary>
+    public async Task<(HttpResponseMessage Response, byte[] Body)> GetProductResponseAsync(
+        string route, string path, CancellationToken cancellationToken)
+    {
+        using var activity = StartActivity(HttpMethod.Get, route, operationId: null);
+        var started = Stopwatch.GetTimestamp();
+        using var request = Build(HttpMethod.Get, route, path, SignatureProfile.SafeRead);
+        var (response, bytes) = await ExchangeAsync(request, HttpMethod.Get, route, activity, started, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            var failure = Refuse(HttpMethod.Get, route, bytes, response, activity, started);
+            response.Dispose();
+            throw failure;
+        }
+        Complete(activity, HttpMethod.Get, route, response, started, errorCode: null);
+        return (response, bytes);
+    }
 
     /// <summary>An enrollment call: authorised by the enrollment token, not signed; Anis signs the answer and the SDK verifies it.</summary>
     public Task<T> SendEnrollmentAsync<T>(HttpMethod method, string route, string path, object? body, CancellationToken cancellationToken)

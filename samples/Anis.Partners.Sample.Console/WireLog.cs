@@ -3,17 +3,16 @@ using System.Text;
 namespace Anis.Partners.Sample;
 
 /// <summary>
-/// The innermost handler: prints each request exactly as it goes on the wire, after the SDK signed it, and
-/// can stop it there.
+/// The innermost handler: prints request metadata after signing and can stop before sending.
 /// </summary>
 /// <remarks>
 /// Installed as the PRIMARY handler, beneath the SDK's signing and verifying handlers, so what it prints is
-/// what Anis receives. In dry-run mode it answers without sending anything, so nothing is spent — no nonce,
+/// what Anis receives, with product bodies and signatures redacted. In dry-run mode it stops before sending,
+/// so nothing is spent — no nonce,
 /// no limit, no money — and the caller sees <see cref="DryRunException"/>. In preview mode the reads go out
-/// and only the first request that changes something (a POST) is held back.
+/// and only the first request that changes something is held back.
 ///
-/// It prints the <c>Signature</c> header shortened: a console sample is not a telemetry pipeline, but there
-/// is still no reason to paste a full signature into a terminal scrollback.
+/// Product bodies stay private even when a caller requests secrets in the command output.
 /// </remarks>
 internal sealed class WireLog(bool dryRun, string? forwardedFor, bool previewMutations = false) : DelegatingHandler(new SocketsHttpHandler())
 {
@@ -36,8 +35,8 @@ internal sealed class WireLog(bool dryRun, string? forwardedFor, bool previewMut
         {
             var value = string.Join(", ", header.Value);
 
-            if (header.Key.Equals("Signature", StringComparison.OrdinalIgnoreCase) && value.Length > 24)
-                value = value[..24] + "…:";
+            if (header.Key.Equals("Signature", StringComparison.OrdinalIgnoreCase))
+                value = "<redacted>";
 
             if (header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
                 value = value.Split(' ')[0] + " <token>";
@@ -49,6 +48,7 @@ internal sealed class WireLog(bool dryRun, string? forwardedFor, bool previewMut
         {
             null => "  (no body)",
             { Length: 0 } => "  (empty body: 0 bytes)",
+            _ when IsProductChange(request) => "  <redacted product body>",
             _ => "  " + Encoding.UTF8.GetString(body),
         });
 
@@ -64,6 +64,10 @@ internal sealed class WireLog(bool dryRun, string? forwardedFor, bool previewMut
 
         return response;
     }
+
+    private static bool IsProductChange(HttpRequestMessage request)
+        => request.Method != HttpMethod.Get && request.RequestUri!.AbsolutePath.Split('/')
+            .Any(segment => segment is "direct-recharges" or "meter-charges");
 }
 
 /// <summary>Thrown by <see cref="WireLog"/> in dry-run mode instead of sending.</summary>

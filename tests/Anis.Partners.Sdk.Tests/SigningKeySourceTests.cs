@@ -5,6 +5,24 @@ namespace Anis.Partners.Sdk.Tests;
 
 public sealed class SigningKeySourceTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("answer")]
+    [InlineData("webhook")]
+    public async Task Optional_purpose_is_preserved_when_reading_and_caching_published_keys(string? purpose)
+    {
+        using var wire = new KeyDocumentWire();
+        wire.Body = "{\"keys\":[{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"axfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpY\",\"y\":\"T-NC4v4af5uO5-tKfA-eFivOM1drMV7Oy7ZAaDe_UfU\",\"kid\":\"key/version\",\"use\":\"sig\",\"alg\":\"ES256\",\"status\":\"active\",\"notBefore\":\"2026-10-20T08:00:00Z\""
+            + (purpose is null ? string.Empty : ",\"purpose\":\"" + purpose + "\"") + "}]}";
+        using var http = Client(wire);
+        var source = new HttpSigningKeySource(http, TimeSpan.FromMinutes(5), new ManualClock());
+        var keys = await source.GetAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(purpose, Assert.Single(keys.Keys).Purpose);
+        Assert.Equal("key/version", keys.Keys[0].Kid);
+        Assert.Same(keys, await source.GetAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(1, wire.Fetches);
+    }
+
     [Fact]
     public void A_cache_longer_than_five_minutes_is_refused()
     {
@@ -227,6 +245,7 @@ public sealed class SigningKeySourceTests
 
         public int Fetches { get; private set; }
         public HttpStatusCode Status { get; set; } = HttpStatusCode.OK;
+        public string Body { get; set; } = """{"keys":[]}""";
         public Task FetchStarted => _fetchStarted!.Task;
 
         public void PauseNextFetch()
@@ -249,7 +268,7 @@ public sealed class SigningKeySourceTests
                 _fetchReleased = null;
             }
 
-            return new HttpResponseMessage(Status) { Content = new StringContent("""{"keys":[]}""") };
+            return new HttpResponseMessage(Status) { Content = new StringContent(Body) };
         }
     }
 }

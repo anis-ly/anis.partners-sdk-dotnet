@@ -22,6 +22,23 @@ SDK chooses the signature profile and the body for you; they are listed so a fai
 | `OwnedCards.RevealAsync` | `POST /v1/wallets/{walletId}/owned-cards/{soldCardId}/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | **signed, verified** | `requests`, `reveals` |
 | `OwnedCards.RevealInvoiceAsync` | `POST /v1/wallets/{walletId}/invoices/{invoiceId}/owned-cards/reveal` | `cards:reveal` | nonce mutation | **zero bytes** | **signed, verified** | `requests`, `reveals` |
 | `Diagnostics.CheckSignatureAsync` | `POST /v1/diagnostics/signature` | `diagnostics:use` | nonce mutation | exactly `{}` | **signed, verified** | `requests` |
+| `MeterCharges.GetMeterPackagesAsync` / `GetMeterPackagesPageAsync` | `GET /v1/wallets/{walletId}/meter-packages` | `meter_charges:read` | read | none | unsigned | `requests` |
+| `MeterCharges.GetMeterChargesAsync` / `GetMeterChargesPageAsync` | `GET /v1/wallets/{walletId}/meter-charges` | `meter_charges:read` | read | none | unsigned | `requests` |
+| `MeterCharges.CreateAsync` / `ResumeAsync` | `POST /v1/wallets/{walletId}/meter-charges` | `meter_charges:create` | order (your operation id as `Idempotency-Key`) | the charge JSON | **signed, verified** | `requests`, `orders` |
+| `MeterCharges.GetAsync` | `GET /v1/meter-charges/{operationId}` | `meter_charges:read` | read | none | **signed, verified** | `requests` |
+| `DirectRechargeProducts.GetDirectRechargeProductsAsync` / `GetDirectRechargeProductsPageAsync` | `GET /v1/wallets/{walletId}/direct-recharge-products` | `direct_recharges:read` | read | none | unsigned | `requests` |
+| `DirectRechargeProducts.GetAsync` | `GET /v1/wallets/{walletId}/direct-recharge-products/{productId}` | `direct_recharges:read` | read | none | unsigned | `requests` |
+| `DirectRechargeProducts.GetDirectRechargeProductLocationsAsync` / `…PageAsync` | `GET /v1/wallets/{walletId}/direct-recharge-products/{productId}/locations` | `direct_recharges:read` | read | none | unsigned | `requests` |
+| `DirectRechargeProducts.QuoteAsync` | `GET /v1/wallets/{walletId}/direct-recharge-products/{productId}/quote` | `direct_recharges:read` | read | none | unsigned | `requests` |
+| `DirectRecharges.GetDirectRechargesAsync` / `GetDirectRechargesPageAsync` | `GET /v1/wallets/{walletId}/direct-recharges` | `direct_recharges:read` | read | none | unsigned | `requests` |
+| `DirectRecharges.CreateAsync` / `ResumeAsync` | `POST /v1/wallets/{walletId}/direct-recharges` | `direct_recharges:create` | order (your operation id as `Idempotency-Key`) | the recharge JSON | **signed, verified** | `requests`, `orders` |
+| `DirectRecharges.GetAsync` | `GET /v1/direct-recharges/{operationId}` | `direct_recharges:read` | read | none | **signed, verified** | `requests` |
+| `DirectRecharges.UpdateRecipientAsync` | `PATCH /v1/direct-recharges/{operationId}/recipient` | `direct_recharges:create` | nonce mutation | the recipient JSON | **signed 202 + Location, verified** | `requests` |
+| `WebhookEndpoint.GetAsync` | `GET /v1/webhook-endpoint` | none | read | none | unsigned | `requests` |
+| `WebhookEndpoint.SetAsync` | `PUT /v1/webhook-endpoint` | none | nonce mutation | `{ "url": "..." }` | **signed, verified** | `requests` |
+| `WebhookEndpoint.TestAsync` | `POST /v1/webhook-endpoint/test` | none | nonce mutation | exactly `{}` | **signed, verified** | `requests` |
+| `WebhookEvents.GetWebhookEventsAsync` / `GetWebhookEventsPageAsync` | `GET /v1/webhook-events` | none | read | none | unsigned | `requests` |
+| `WebhookEvents.RedeliverAsync` | `POST /v1/webhook-events/{eventId}/redeliver` | none | nonce mutation | exactly `{}` | **signed, verified** | `requests` |
 | `AnisEnrollmentClient.GetAsync` | `GET /v1/enrollments/{invitationId}` | enrollment token | — | none | **signed, verified** | — |
 | `AnisEnrollmentClient.SubmitKeyAsync` | `POST /v1/enrollments/{invitationId}/keys` | enrollment token | — | the public key | **signed, verified** | — |
 | `AnisEnrollmentClient.SubmitProofAsync` / `ProveAsync` | `POST /v1/enrollments/{invitationId}/proof` | enrollment token | — | the proof | **signed, verified** | — |
@@ -45,6 +62,35 @@ and sign its digest under the same nonce profile. They carry no idempotency key 
 A retired key cannot be revoked (`key_not_revocable`, 409); an unknown key or one belonging to another application
 returns the same `resource_not_found`, 404. An already-revoked key returns its current state. Application suspension
 returns its current suspended state; subsequent requests are refused by admission. Resume is staff-only.
+
+## Meters, Direct recharge and notifications
+
+- **Scopes.** `meter_charges:create` also grants the meter reads and packages; `meter_charges:read` grants only the
+  reads. `direct_recharges:create` also grants the product reads, quotes and the direct recharge reads;
+  `direct_recharges:read` grants only the reads. A create scope never has to be added to read, and a read scope never
+  allows a purchase. The recipient change needs `direct_recharges:create`. The webhook endpoint and event routes need
+  no scope: every application manages its own endpoint, though admission and the allowed networks still apply.
+- **One operation id.** The `Idempotency-Key` you persist is the meter charge id or the Direct recharge id. The
+  operation reads and the recipient change are scoped to your application: another application's id answers like a
+  missing one. They take no wallet in the path.
+- **Limits.** Meter charges and Direct recharges count under the existing `orders` limit and against the same
+  daily spending cap as card orders. There is no limit type of their own.
+- **Recipient correction acknowledgement.** `UpdateRecipientAsync` returns `DirectRechargeProcessing` (the same result type as a create 202):
+  `Accepted` is the existing `DirectRechargeAccepted`, exactly `{operationId, operationType: "directRecharge", status: "processing"}`, and `Location`
+  is the required verified header pointing to the direct recharge read. A successful PATCH is always 202;
+  a missing Location, another success status or a direct recharge body is rejected. The read side may still show
+  `suspendedDataError` immediately after acceptance. Read later with `GetAsync` or wait for a `directRecharge.*`
+  webhook before deciding on another correction; the SDK never follows Location or retries the PATCH.
+- **Signed changes without an idempotency key.** The recipient change, the endpoint update, the test and the
+  redelivery are signed with a one-time nonce and a digest over their body (`{}` for the test and the redelivery),
+  and carry no `Idempotency-Key`. After an interrupted one, read the state again before deciding to send it again.
+- **Lists.** The meter, Direct recharge and delivery lists page with an opaque cursor, keep their filters on every
+  page and detect a cursor that does not advance. The meter and Direct recharge lists take `from`/`to` (at most 31 days;
+  the last 31 days when both are absent) and an optional page size (default 50, at most 100). The delivery list takes
+  `status`, `since` and `cursor`; its page size is fixed at 50.
+- **Not covered.** The wallet statement and wallet-to-wallet transfer are not routes of this version.
+
+The route table above lists the 39 routes of this version. The gateway also publishes three staging-only test operations for the allowed-network rules (`GET` and `POST /v1/application/networks`, `POST /v1/application/networks/remove`); they are never part of this SDK, and the drift test skips exactly those three. Their two error codes (`network_not_removable`, `partner_network_limit_reached`) are known to `PartnerErrorCode`.
 
 ## Before a call is looked at
 

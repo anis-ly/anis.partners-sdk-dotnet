@@ -176,10 +176,26 @@ You can stop your own application with `Access.SuspendApplicationAsync(reason)` 
 trimmed and must contain 1–500 characters. Suspension requires Anis staff to resume; a revoked key cannot be
 restored. Every stop emails the technical contact, and a partner-initiated stop also alerts Anis staff.
 
+## Verifying notifications
+
+`PartnerWebhookVerifier` is independent of response verification: its own failure vocabulary
+(`WebhookVerificationFailure`, 22 reasons), its own profile (`anis-partner-webhook-v1`, 300-second lifetime) and its
+own key purpose. The service always emits the additive `purpose` member (`answer` or `webhook`). It remains optional when
+reading keys for compatibility. Response verification accepts a key whose `purpose` is `answer` or absent, so a document without it keeps working, and
+rejects a key published for another purpose (`KeyRejected`). A notification is accepted only under a key
+published with `purpose` `webhook`. The configured URL and application id come from your trusted configuration, the
+raw bytes are digested before anything is parsed, and nothing from a failed notification is used. See
+[Webhooks](webhooks.md).
+
+Signed answers for meter charges, Direct recharges and the endpoint changes use the same response verification as
+orders; the meter receipt and recipient details they carry are as sensitive as card codes. Do not log them.
+
 ## Do not log credentials
 
 `RevealedCredential.ToString()` redacts the serial and the voucher, so a careless interpolation cannot leak
-one. That is a guard rail, not a guarantee: do not serialize the object into a log either.
+one. That is a guard rail, not a guarantee: do not serialize the object into a log either. `MeterToken` and the
+recipient values of Direct recharge are redacted the same way, and the webhook challenge is redacted in
+`WebhookVerificationData`.
 
 Credential plaintext exists in exactly two places on this surface — the first completion of an order, and a
 reveal. Persist it where you keep secrets.

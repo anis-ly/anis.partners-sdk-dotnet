@@ -12,6 +12,28 @@ public sealed class ModelFieldTests
 {
     private static T Read<T>(string json) => JsonSerializer.Deserialize<T>(json, AnisJson.Options)!;
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(",\"logo\":null")]
+    public void A_meter_package_without_a_logo_keeps_it_absent(string optional)
+    {
+        var package = Read<MeterPackage>(ProductBodies.Fill("""{"id":"@package@","name":"Package","gecolPackageName":"PKG_100","unitPrice":{"amount":"97.500","currency":"LYD"},"personalPrice":{"amount":"100.000","currency":"LYD"}@optional@}""", ("optional", optional)));
+        Assert.Null(package.Logo);
+        Assert.Equal(97.500m, package.UnitPrice.Amount);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(",\"name\":null")]
+    public void A_recipient_field_without_a_name_keeps_it_absent(string optional)
+    {
+        var field = Read<DirectRechargeRecipientField>("{\"key\":\"recipient_number\",\"kind\":\"text\",\"for\":\"recipient\",\"order\":1" + optional + "}");
+        Assert.Null(field.Name);
+        Assert.Equal("recipient_number", field.Key);
+        Assert.Equal(DirectRechargeFieldKind.Text, field.Kind);
+        Assert.Equal(DirectRechargeFieldFor.Recipient, field.For);
+    }
+
     [Fact]
     public void A_subcategory_reads_its_disclaimer()
     {

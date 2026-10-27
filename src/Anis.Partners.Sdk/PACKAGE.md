@@ -1,6 +1,6 @@
 # Anis.Partners
 
-Version **2.1.0**. **1.x is deprecated — upgrade.**
+Version **2.2.0**. **1.x is deprecated — upgrade.**
 
 The .NET client for the Anis Partner API, for **.NET 8** and **.NET 10**.
 
@@ -8,8 +8,11 @@ Every request is signed (RFC 9421 over P-256), every answer Anis signs — order
 signature self-check — is verified before you see it, and the operations are typed. Ordering, idempotent retry, one-time card codes and recovery after a timeout are
 shaped so they cannot go wrong quietly.
 
+Version 2.2 adds electricity meter charges, direct recharges, webhook endpoint management and a standalone verifier for the
+notifications Anis sends to you.
+
 ```bash
-dotnet add package Anis.Partners --version 2.1.0
+dotnet add package Anis.Partners --version 2.2.0
 ```
 
 ```csharp
@@ -40,6 +43,7 @@ var card = await client.Catalogue.GetCardAsync(walletId, cardId, cancellationTok
 - [Getting started, enrolment and your first call](https://developers.anis.ly/sdks/dotnet)
 - [Orders and recovery](https://github.com/anis-ly/anis.partners-sdk-dotnet/blob/main/docs/orders-and-recovery.md) — read this before you take money
 - [Errors](https://github.com/anis-ly/anis.partners-sdk-dotnet/blob/main/docs/errors.md)
+- [Webhooks](https://github.com/anis-ly/anis.partners-sdk-dotnet/blob/main/docs/webhooks.md) — verify notifications before reading them
 - [Security and key custody](https://github.com/anis-ly/anis.partners-sdk-dotnet/blob/main/docs/security.md)
 - [Observability](https://github.com/anis-ly/anis.partners-sdk-dotnet/blob/main/docs/observability.md)
 - [A working sample for every route](https://github.com/anis-ly/anis.partners-sdk-dotnet/tree/main/samples/Anis.Partners.Sample.Console)

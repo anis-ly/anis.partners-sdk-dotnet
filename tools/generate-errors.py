@@ -7,7 +7,7 @@ direction: the catalogue is the source and the C# is the output. Never edit the 
 edit is a divergence from the contract that the drift test will then fail on. Released numbers are read
 back from the generated file and kept; a code may be added, never removed.
 """
-import json, os, re
+import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CAT = os.path.join(ROOT, "contracts", "error-catalogue.json")
@@ -97,6 +97,12 @@ w("    /// <summary>Whether the catalogue marks this code retryable. An unknown 
 w("    public static bool IsRetryable(PartnerErrorCode code) => Retryable.Contains(code);")
 w("}")
 
+generated = "\n".join(lines) + "\n"
+if "--check" in sys.argv:
+    if not os.path.exists(OUT) or open(OUT).read() != generated:
+        sys.exit("STALE generated error source; run python3 tools/sync-contracts.py")
+    print(f"checked {len(codes)} public codes")
+    sys.exit(0)
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
-open(OUT, "w").write("\n".join(lines) + "\n")
+open(OUT, "w").write(generated)
 print(f"generated {len(codes)} public codes -> {os.path.relpath(OUT, ROOT)}")

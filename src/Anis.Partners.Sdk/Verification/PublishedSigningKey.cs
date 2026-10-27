@@ -23,6 +23,9 @@ public sealed record PublishedSigningKey
     /// <summary>Intended use, when published.</summary>
     [JsonPropertyName("use")] public string? Use { get; init; }
 
+    /// <summary>The signing purpose, when published. Webhook verification requires webhook.</summary>
+    [JsonPropertyName("purpose")] public string? Purpose { get; init; }
+
     /// <summary>Algorithm, when published.</summary>
     [JsonPropertyName("alg")] public string? Alg { get; init; }
 
@@ -40,10 +43,12 @@ public sealed record PublishedSigningKey
     [JsonPropertyName("status")] public string? Status { get; init; }
 
     /// <summary>When this key can start signing responses.</summary>
-    [JsonPropertyName("notBefore")] public DateTimeOffset? NotBefore { get; init; }
+    [JsonPropertyName("notBefore")]
+    [JsonConverter(typeof(PublishedKeyTimestampConverter))] public DateTimeOffset? NotBefore { get; init; }
 
     /// <summary>When a retired key stopped signing responses.</summary>
-    [JsonPropertyName("retiredAt")] public DateTimeOffset? RetiredAt { get; init; }
+    [JsonPropertyName("retiredAt")]
+    [JsonConverter(typeof(PublishedKeyTimestampConverter))] public DateTimeOffset? RetiredAt { get; init; }
 }
 
 /// <summary>A compromised response-signing key.</summary>

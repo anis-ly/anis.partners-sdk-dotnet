@@ -2,6 +2,28 @@
 
 All notable changes to the `Anis.Partners` package. Versions follow [Semantic Versioning](https://semver.org).
 
+## [2.2.0] - 2026-10-27
+
+### Added
+
+- Charge electricity meters and read receipts, tokens and refunds with safe recovery after an interrupted request.
+- Quote Direct recharge, follow direct recharges and correct recipient details while a direct recharge is paused.
+- Manage a webhook endpoint and request delivery again when a notification was missed.
+- Verify notifications before reading their contents and keep recipient field errors available to the integration.
+- Nine new public error codes (39 to 48) for meters, direct recharges and the webhook endpoint.
+- `PublishedSigningKey.Purpose` exposes the purpose a key was published for (`answer` or `webhook`).
+
+### Changed
+
+- An `idempotency_conflict` on a meter charge or direct recharge create or resume now returns `…OutcomeUnknown`, never `…NotPlaced`: the original request may already have been accepted and charged. Read the operation by its id (`GetAsync`) before any new attempt.
+- A meter charge that failed while its refund is still pending is no longer `MeterChargeFinal`: it stays `MeterChargeProcessing` carrying the read until the refund is `Refunded` or `NotCharged`.
+- Reading a meter charge or direct recharge whose create was refused raises the typed `AnisApiException` for the recorded refusal (signed 409 or 422, `IsReplayed` true).
+
+### Security
+
+- Response verification now rejects a signing key that was published for another purpose than `answer` (a key with no purpose is still accepted); notifications require a key published for `webhook`.
+- Key `notBefore` and `retiredAt` values are parsed as strict RFC 3339; an invalid value is reported as absent metadata and verification answers `KeyRejected` instead of a parser error.
+
 ## [2.1.0] - 2026-10-18
 
 ### Added

@@ -149,6 +149,58 @@ not place it again under a new id. Keep resuming the same id, but slowly — min
 asks the owner again, and one of them may return the completed order **with its card codes**
 (`OrderCompleted`). Tell Anis the operation id as well, so the order can be resolved on their side.
 
+## Meter charges and Direct recharge
+
+A meter charge and a Direct recharge follow the same discipline as an order, with their own result types:
+`MeterChargeResult` and `DirectRechargeResult`, each `Processing`, `Final`, `NotPlaced` or `OutcomeUnknown`. The
+operation id you persist is sent as the `Idempotency-Key`; it is the charge id or the direct recharge id and is never put
+in the body. `ResumeAsync` repeats the identical request and id with a fresh signature, and it never invents an id.
+
+- **`…Processing`** is a verified `202` (exactly `operationId`, `operationType`, `status: "processing"`, with the
+  verified `Location` and `Retry-After`, five seconds when absent) or an owner read that is not finished (a
+  Direct recharge that is `AwaitingPayment`, `Pending`, `InProgress`, `SuspendedDataError` or `RejectedAwaitingRefund`).
+  Wait, then resume the same id. A paused direct recharge stays here until you correct the recipient (`UpdateRecipientAsync`).
+- **`…Final`** is an authoritative end: a meter charge that `Succeeded` (receipt and every token) or `Failed` with
+  the refund settled (read `Refund`: `Refunded` or `NotCharged`), a Direct recharge that is `Completed`,
+  `PaymentFailed` or `RejectedWithRefund`. A failed charge with a refund is a result, never an exception.
+  A meter charge that `Failed` while `Refund` is still `Pending` is **not** final: money was taken and the refund is
+  on its way, so you get `MeterChargeProcessing` carrying that read. Read again (`GetAsync`) or wait for the
+  `meterCharge.failed` webhook; it becomes `…Final` once the refund is `Refunded` or `NotCharged`.
+- **`…NotPlaced`** is a verified definitive refusal on the first create (for example `meter_rejected`,
+  `package_unavailable`, `direct_recharge_product_unavailable`, `amount_out_of_range`, `price_changed`,
+  `insufficient_balance`, or a recorded replayed refusal). Nothing was charged; a new attempt takes a new id. On a
+  resume, a fresh refusal stays `…OutcomeUnknown`.
+- **`idempotency_conflict` is never `…NotPlaced`.** On a create or a resume it comes back as `…OutcomeUnknown`
+  (`Cause` is the typed `AnisApiException`). It does not say the original request failed: that request may already
+  have been accepted and charged, and a repeat of an id that is still unknown a minute after it was admitted also
+  closes this way. Read the operation by its id (`GetAsync`) before any new attempt, and never assume nothing was charged.
+- **`…OutcomeUnknown`** covers a timeout, a lost or empty or unreadable answer, a failed key fetch, a bad signature,
+  an answer for another id, a refusal of your access (`insufficient_scope`, `wallet_not_granted`,
+  `invalid_credentials`) and an owner state this version does not know. Resume with the same id and the original body.
+  Never create a replacement purchase.
+
+Reading (`GetAsync`) raises `MeterChargeProcessingException` or `DirectRechargeProcessingException` when the
+operation is accepted but its full state is not available yet; wait for `RetryAfter` and read again. The `Location`
+is never followed for you.
+
+`GetAsync` also answers a create that was refused: the read of that id returns the recorded refusal as a signed `409`
+(`insufficient_balance`, `price_changed`, `package_unavailable`, `direct_recharge_product_unavailable`,
+`idempotency_conflict`) or `422` (`meter_rejected`, `amount_out_of_range`, a refused recipient), marked
+`Idempotency-Replayed: true`. The SDK raises it as the typed `AnisApiException` with `Code` and `IsReplayed` set; it is
+the definitive answer for that id and is not retried. Note the code means something different here: on a read,
+`idempotency_conflict` says no operation exists under this id for this application.
+
+A recipient correction returns `DirectRechargeProcessing` (the same result type as a create 202), carrying the signed 202 body as
+`Accepted`, the existing `DirectRechargeAccepted` (`operationId`, `operationType: "directRecharge"`, `status: "processing"`) and the required verified
+`Location`. It does not return a direct recharge read. Anis has accepted the correction, but the read side can still
+show the previous suspended status until projection catches up. Read later with `DirectRecharges.GetAsync` or
+wait for a `directRecharge.*` webhook. Missing Location, a non-202 success or a malformed acknowledgement raises
+`JsonException`; it does not prove the correction was unapplied. Read before choosing to retry.
+
+The recipient change, the endpoint update, the test and the redelivery are signed changes without an idempotency
+key. They are never retried silently: after an interrupted one, read the state again (`DirectRecharges.GetAsync`,
+`WebhookEndpoint.GetAsync`, `WebhookEvents.GetWebhookEventsAsync`) before you decide to send it again.
+
 ## When an order is refused: was it placed?
 
 The SDK answers that for you, by the case it returns:
@@ -193,3 +245,9 @@ This table classifies a first attempt. On a resume, every fresh (non-replayed) r
 
 A timeout is never `failed`. Only a definitive owner business refusal is `failed`, and a completed order
 never becomes failed afterwards.
+
+The sample product journal publishes immutable intent before sending, using exclusive file creation and private
+Unix permissions. Intent includes recipient input and must be protected at rest. Outcomes are separate files
+replaced atomically; a cancelled or failed outcome write cannot truncate the saved request. Resume reads the
+original intent even when no outcome was recorded. Concurrent attempts to record the same operation id refuse
+the competing writer.

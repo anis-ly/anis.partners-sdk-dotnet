@@ -30,6 +30,21 @@ public interface IAnisPartnersClient
     /// <summary>Buying, and recovering a purchase whose outcome was never delivered.</summary>
     IOrderOperations Orders { get; }
 
+    /// <summary>Meter packages, charges and recovery.</summary>
+    IMeterChargeOperations MeterCharges { get; }
+
+    /// <summary>Direct recharge products, locations and quotes.</summary>
+    IDirectRechargeProductOperations DirectRechargeProducts { get; }
+
+    /// <summary>Direct recharge purchases, recipient correction and recovery.</summary>
+    IDirectRechargeOperations DirectRecharges { get; }
+
+    /// <summary>This application’s webhook endpoint.</summary>
+    IWebhookEndpointOperations WebhookEndpoint { get; }
+
+    /// <summary>Notification deliveries and redelivery requests.</summary>
+    IWebhookEventOperations WebhookEvents { get; }
+
     /// <summary>Owned cards and their credentials.</summary>
     IOwnedCardOperations OwnedCards { get; }
 
@@ -77,6 +92,11 @@ public sealed class AnisPartnersClient : IAnisPartnersClient
         Wallets = new WalletOperations(transport);
         Catalogue = new CatalogueOperations(transport);
         Orders = new OrderOperations(transport, loggers.CreateLogger<OrderOperations>());
+        MeterCharges = new MeterChargeOperations(transport);
+        DirectRechargeProducts = new DirectRechargeProductOperations(transport);
+        DirectRecharges = new DirectRechargeOperations(transport);
+        WebhookEndpoint = new WebhookEndpointOperations(transport);
+        WebhookEvents = new WebhookEventOperations(transport);
         OwnedCards = new OwnedCardOperations(transport);
         Diagnostics = new DiagnosticsOperations(transport);
     }
@@ -150,6 +170,21 @@ public sealed class AnisPartnersClient : IAnisPartnersClient
 
     /// <inheritdoc/>
     public IOwnedCardOperations OwnedCards { get; }
+
+    /// <inheritdoc/>
+    public IMeterChargeOperations MeterCharges { get; }
+
+    /// <inheritdoc/>
+    public IDirectRechargeProductOperations DirectRechargeProducts { get; }
+
+    /// <inheritdoc/>
+    public IDirectRechargeOperations DirectRecharges { get; }
+
+    /// <inheritdoc/>
+    public IWebhookEndpointOperations WebhookEndpoint { get; }
+
+    /// <inheritdoc/>
+    public IWebhookEventOperations WebhookEvents { get; }
 
     /// <inheritdoc/>
     public IDiagnosticsOperations Diagnostics { get; }

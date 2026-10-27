@@ -1,3 +1,4 @@
+using System.Net;
 using Anis.Partners.Sdk.Signing;
 
 namespace Anis.Partners.Sdk.Operations;
@@ -23,34 +24,52 @@ internal static class PartnerRoutes
     public static IReadOnlyList<PartnerRoute> All { get; } =
     [
         // Information: the request is signed, the answer is not.
-        new("GET", "/v1/profile", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}/catalog/categories", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}/catalog/categories/{categoryId}/subcategories", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}/cards", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}/catalog/cards/{cardId}", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}/owned-cards", SignatureProfile.SafeRead, SignsResponse: false),
-        new("GET", "/v1/wallets/{walletId}/owned-cards/{soldCardId}", SignatureProfile.SafeRead, SignsResponse: false),
+        new("GET", "/v1/profile", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.profile.read", RequiredScope: "profile:read", WalletBound: false),
+        new("GET", "/v1/wallets", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.wallets.list", RequiredScope: "wallets:read", WalletBound: false),
+        new("GET", "/v1/wallets/{walletId}", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.wallets.read", RequiredScope: "wallets:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/catalog/categories", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.catalogue.categories.list", RequiredScope: "catalogue:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/catalog/categories/{categoryId}/subcategories", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.catalogue.category-subcategories.list", RequiredScope: "catalogue:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.catalogue.subcategory.read", RequiredScope: "catalogue:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/catalog/subcategories/{subcategoryId}/cards", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.catalogue.subcategory-cards.list", RequiredScope: "catalogue:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/catalog/cards/{cardId}", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.catalogue.card.read", RequiredScope: "catalogue:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/owned-cards", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.cards.list", RequiredScope: "cards:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/owned-cards/{soldCardId}", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.cards.read", RequiredScope: "cards:read", WalletBound: true),
 
         // Money, card codes, access stops and the self-check: both directions signed.
-        new("POST", "/v1/application/suspend", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
-        new("POST", "/v1/keys/{keyId}/revoke", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
-        new("POST", "/v1/wallets/{walletId}/orders", SignatureProfile.OrderMutation, SignsResponse: true),
-        new("GET", "/v1/orders/{operationId}", SignatureProfile.SafeRead, SignsResponse: true),
-        new("POST", "/v1/wallets/{walletId}/owned-cards/{soldCardId}/reveal", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
-        new("POST", "/v1/wallets/{walletId}/invoices/{invoiceId}/owned-cards/reveal", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
-        new("POST", "/v1/diagnostics/signature", SignatureProfile.BodylessNonceMutation, SignsResponse: true),
+        new("POST", "/v1/application/suspend", SignatureProfile.BodylessNonceMutation, SignsResponse: true, RouteId: "partner.access.application.suspend", RequiredScope: null, WalletBound: false),
+        new("POST", "/v1/keys/{keyId}/revoke", SignatureProfile.BodylessNonceMutation, SignsResponse: true, RouteId: "partner.access.key.revoke", RequiredScope: null, WalletBound: false),
+        new("POST", "/v1/wallets/{walletId}/orders", SignatureProfile.OrderMutation, SignsResponse: true, RouteId: "partner.orders.create", RequiredScope: "orders:create", WalletBound: true),
+        new("GET", "/v1/orders/{operationId}", SignatureProfile.SafeRead, SignsResponse: true, RouteId: "partner.orders.read", RequiredScope: "orders:read", WalletBound: false),
+        new("POST", "/v1/wallets/{walletId}/owned-cards/{soldCardId}/reveal", SignatureProfile.BodylessNonceMutation, SignsResponse: true, RouteId: "partner.cards.reveal", RequiredScope: "cards:reveal", WalletBound: true),
+        new("POST", "/v1/wallets/{walletId}/invoices/{invoiceId}/owned-cards/reveal", SignatureProfile.BodylessNonceMutation, SignsResponse: true, RouteId: "partner.invoices.cards.reveal", RequiredScope: "cards:reveal", WalletBound: true),
+        new("POST", "/v1/diagnostics/signature", SignatureProfile.BodylessNonceMutation, SignsResponse: true, RouteId: "partner.diagnostics.signature", RequiredScope: "diagnostics:use", WalletBound: false),
 
         // Unsigned requests: enrollment carries a bearer-style token, and its answers establish a key, so they are signed.
-        new("GET", "/v1/enrollments/{invitationId}", null, SignsResponse: true),
-        new("POST", "/v1/enrollments/{invitationId}/keys", null, SignsResponse: true),
-        new("POST", "/v1/enrollments/{invitationId}/proof", null, SignsResponse: true),
-        new("GET", "/v1/enrollments/{invitationId}/status", null, SignsResponse: true),
+        new("GET", "/v1/enrollments/{invitationId}", null, SignsResponse: true, RouteId: "partner.enrollments.read", RequiredScope: null, WalletBound: false),
+        new("POST", "/v1/enrollments/{invitationId}/keys", null, SignsResponse: true, RouteId: "partner.enrollments.keys.submit", RequiredScope: null, WalletBound: false),
+        new("POST", "/v1/enrollments/{invitationId}/proof", null, SignsResponse: true, RouteId: "partner.enrollments.proof.submit", RequiredScope: null, WalletBound: false),
+        new("GET", "/v1/enrollments/{invitationId}/status", null, SignsResponse: true, RouteId: "partner.enrollments.status.read", RequiredScope: null, WalletBound: false),
 
         // The key document carries nothing either way: verifying it would need the keys it is fetched to supply.
-        new("GET", "/.well-known/partner-signing-keys.json", null, SignsResponse: false),
+        new("GET", "/.well-known/partner-signing-keys.json", null, SignsResponse: false, RouteId: "partner.signing-keys.read", RequiredScope: null, WalletBound: false),
+
+        new("GET", "/v1/wallets/{walletId}/meter-packages", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.meter-packages.getMeterPackages", RequiredScope: "meter_charges:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/meter-charges", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.meter-charges.getMeterCharges", RequiredScope: "meter_charges:read", WalletBound: true),
+        new("POST", "/v1/wallets/{walletId}/meter-charges", SignatureProfile.OrderMutation, SignsResponse: true, RouteId: "partner.meter-charges.create", RequiredScope: "meter_charges:create", WalletBound: true),
+        new("GET", "/v1/meter-charges/{operationId}", SignatureProfile.SafeRead, SignsResponse: true, RouteId: "partner.meter-charges.read", RequiredScope: "meter_charges:read", WalletBound: false),
+        new("GET", "/v1/wallets/{walletId}/direct-recharge-products", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.direct-recharge-products.getDirectRechargeProducts", RequiredScope: "direct_recharges:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/direct-recharge-products/{productId}", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.direct-recharge-products.read", RequiredScope: "direct_recharges:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/direct-recharge-products/{productId}/locations", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.direct-recharge-products.locations.getDirectRechargeProductLocations", RequiredScope: "direct_recharges:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/direct-recharge-products/{productId}/quote", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.direct-recharge-products.quote", RequiredScope: "direct_recharges:read", WalletBound: true),
+        new("GET", "/v1/wallets/{walletId}/direct-recharges", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.direct-recharges.getDirectRecharges", RequiredScope: "direct_recharges:read", WalletBound: true),
+        new("POST", "/v1/wallets/{walletId}/direct-recharges", SignatureProfile.OrderMutation, SignsResponse: true, RouteId: "partner.direct-recharges.create", RequiredScope: "direct_recharges:create", WalletBound: true),
+        new("GET", "/v1/direct-recharges/{operationId}", SignatureProfile.SafeRead, SignsResponse: true, RouteId: "partner.direct-recharges.read", RequiredScope: "direct_recharges:read", WalletBound: false),
+        new("PATCH", "/v1/direct-recharges/{operationId}/recipient", SignatureProfile.BodylessNonceMutation, SignsResponse: true, RouteId: "partner.direct-recharges.recipient.update", RequiredScope: "direct_recharges:create", WalletBound: false, SuccessStatus: HttpStatusCode.Accepted),
+        new("GET", "/v1/webhook-endpoint", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.webhook-endpoint.read", RequiredScope: null, WalletBound: false),
+        new("PUT", "/v1/webhook-endpoint", SignatureProfile.BodylessNonceMutation, SignsResponse: true, RouteId: "partner.webhook-endpoint.update", RequiredScope: null, WalletBound: false),
+        new("POST", "/v1/webhook-endpoint/test", SignatureProfile.BodylessNonceMutation, SignsResponse: true, RouteId: "partner.webhook-endpoint.test", RequiredScope: null, WalletBound: false),
+        new("GET", "/v1/webhook-events", SignatureProfile.SafeRead, SignsResponse: false, RouteId: "partner.webhook-events.getWebhookEvents", RequiredScope: null, WalletBound: false),
+        new("POST", "/v1/webhook-events/{eventId}/redeliver", SignatureProfile.BodylessNonceMutation, SignsResponse: true, RouteId: "partner.webhook-events.redeliver", RequiredScope: null, WalletBound: false),
     ];
 
     private static readonly Dictionary<(string Method, string Template), PartnerRoute> ByRoute =
@@ -79,4 +98,8 @@ internal static class PartnerRoutes
 /// Whether Anis signs this route's answers — every one of them, success and refusal — so the SDK verifies them
 /// and refuses one that carries no signature. False: the answer is passed through unverified.
 /// </param>
-internal sealed record PartnerRoute(string Method, string Template, SignatureProfile? Profile, bool SignsResponse);
+/// <param name="RouteId">The stable gateway route identifier.</param>
+/// <param name="RequiredScope">The required scope, or null for scope-free routes.</param>
+/// <param name="WalletBound">Whether admission binds the request to an authorized wallet.</param>
+/// <param name="SuccessStatus">The sole success status where the contract requires one.</param>
+internal sealed record PartnerRoute(string Method, string Template, SignatureProfile? Profile, bool SignsResponse, string? RouteId = null, string? RequiredScope = null, bool WalletBound = false, HttpStatusCode? SuccessStatus = null);
