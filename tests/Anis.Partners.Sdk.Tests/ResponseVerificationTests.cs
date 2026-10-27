@@ -236,6 +236,31 @@ public sealed class ResponseVerificationTests
         Assert.Equal(ResponseVerificationFailure.KeyRejected, failure.Failure);
     }
 
+    [Theory]
+    [InlineData("webhook")]
+    [InlineData("")]
+    [InlineData("Answer")]
+    public async Task A_key_published_for_another_purpose_cannot_verify_an_api_answer(string purpose)
+    {
+        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var document = WithPurpose(Document(key), purpose);
+        var failure = await Assert.ThrowsAsync<UnverifiableResponseException>(
+            async () => await Verifier(document).VerifyAsync(Response(key), TestContext.Current.CancellationToken));
+        Assert.Equal(ResponseVerificationFailure.KeyRejected, failure.Failure);
+    }
+
+    [Theory]
+    [InlineData("answer")]
+    [InlineData(null)]
+    public async Task An_answer_purpose_or_absent_purpose_key_verifies_an_api_answer(string? purpose)
+    {
+        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        await Verifier(WithPurpose(Document(key), purpose)).VerifyAsync(Response(key), TestContext.Current.CancellationToken);
+    }
+
+    private static PartnerSigningKeySet WithPurpose(PartnerSigningKeySet document, string? purpose)
+        => document with { Keys = [document.Keys[0] with { Purpose = purpose }] };
+
     private static PartnerResponseVerifier Verifier(PartnerSigningKeySet document)
         => new(new StaticSigningKeySource(document), new FixedClock());
 

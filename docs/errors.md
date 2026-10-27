@@ -53,18 +53,58 @@ One base type plus a small set of subclasses for the refusals callers actually b
 | `DependencyUnavailableException` | `dependency_unavailable`, `request_timeout`, `internal_error` | no decision was reached — retry a read, **resume** an order |
 | `EnrollmentRefusedException` | `invitation_invalid`, `challenge_expired`, `key_proof_invalid`, `key_duplicate` | an enrollment step was refused |
 | `EnrollmentKeyMismatchException` | none — raised by the SDK, not by Anis (it derives from `Exception`, not `AnisApiException`) | the key Anis holds has another thumbprint than the key you submitted; no proof was built — ask Anis staff to restart the enrollment |
-| `AnisApiException` | everything else (`allowed_debt_consent_required`, `invoice_reveal_limit_exceeded`, `malformed_signed_request`, …) | read `Code` |
+| `AnisApiException` | the meter, Direct recharge and notification refusals below, and everything else (`allowed_debt_consent_required`, `invoice_reveal_limit_exceeded`, `malformed_signed_request`, …) | read `Code` |
 
 `malformed_signed_request` (400) means the signed request was badly built — a signature header missing or unreadable, the signed parts not the ones the route needs or not in its order, or a `Content-Digest` that cannot be read or does not describe the body. The SDK builds these itself, so with the SDK it points at something between you and Anis rewriting the request (a proxy that changes headers or the body). It is decided before any key is looked at and says nothing about your key. On an order it comes back as `OrderOutcomeUnknown` (suggested delay 60 seconds): fix what rewrites the request, then resume the same id — never a new one. `signature_expired` and `invalid_content_digest` are in the catalogue — and in `PartnerErrorCode` — but Anis does not send them: an expired signature arrives as `invalid_credentials`, a digest that does not describe the body as `malformed_signed_request`.
 
-All 39 public codes are in `PartnerErrorCode`, generated from the error catalogue, and a test pins every one
+All 48 public codes are in `PartnerErrorCode`, generated from the error catalogue, and a test pins every one
 of them to its exception type and its order outcome. A code this SDK version does not know arrives as
 `PartnerErrorCode.Unknown`, with its wire spelling in `RawCode`. On an order, a refusal marked replayed returns
 `OrderNotPlaced`; otherwise it returns `OrderOutcomeUnknown`, requiring a resume with the same operation id.
 
+## Meter, Direct recharge and notification refusals
+
+Seven codes arrive as the base `AnisApiException`; read `Code`.
+
+| Code | Status | Meaning | What to do |
+|---|---|---|---|
+| `meter_rejected` | 422 | the meter number was refused at the check | correct the meter number; a new attempt takes a new operation id |
+| `package_unavailable` | 409 | the meter package is not available | choose an available package; new operation id |
+| `direct_recharge_product_unavailable` | 409 | the product is unavailable, is not sold to this wallet, or has no price for its tier | choose an available product priced for this wallet |
+| `amount_out_of_range` | 422 | the amount is outside the product's limits | quote again and choose an amount within the limits |
+| `direct_recharge_not_suspended` | 409 | a recipient change was sent while the direct recharge is not paused | read the direct recharge; recipient changes need `SuspendedDataError` |
+| `webhook_endpoint_invalid` | 422 | the URL breaks the rules | HTTPS, port 443, a host name that contains a dot, no user-info or fragment, at most 2048 characters |
+| `webhook_endpoint_unverified` | 409 | the endpoint has not passed verification | set an endpoint and complete verification before testing or redelivering |
+
+The first four are definitive refusals of a purchase: `CreateAsync` returns them as `…NotPlaced`. The last three
+belong to signed changes of the endpoint and are thrown; they say nothing about any purchase. A meter failure
+inside a *failed charge* (`MeterCharge.Failure`) is a body value, not one of these codes.
+
+A recipient that fails its field rules is `validation_failed` (422) with `extensions.fields`, a map from the field
+key to a message, for example `{"recipient_number":"Invalid number"}`. The map is available unchanged through
+`failure.Problem.Extensions`, unknown members included. Branch on the key and the code, never on the localized
+message, and do not correct a recipient automatically. The messages can quote what the partner typed: do not log
+a whole problem for a recipient refusal, and do not log extension values wholesale.
+
+Treat extensions as untrusted optional JSON. For example:
+
+```csharp
+if (failure.Problem.Extensions is { ValueKind: JsonValueKind.Object } extensions
+    && extensions.TryGetProperty("fields", out var fields)
+    && fields.ValueKind == JsonValueKind.Object)
+{
+    foreach (var field in fields.EnumerateObject())
+        if (field.Value.ValueKind == JsonValueKind.String)
+            ShowFieldError(field.Name, field.Value.GetString()); // display only; do not log
+}
+```
+
+Absent, null or differently shaped extensions still carry the same typed refusal; preserve their raw JSON
+when needed for forward compatibility and ignore values you cannot safely display.
+
 ## `validation_failed` never names the field
 
-By design: naming the failing member would let anyone probe for valid card ids and price points. The SDK
+By design: naming the failing member would let anyone probe for valid card ids and price points. The one exception is a Direct recharge recipient, whose field keys are your own input (see above). The SDK
 already refuses, before sending, a total that is not unit × quantity, mismatched currencies, a quantity
 below one and a unit price that is not greater than zero. Anis also refuses:
 

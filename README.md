@@ -1,6 +1,6 @@
 # Anis.Partners — .NET SDK
 
-Version **2.1.0**. **1.x is deprecated — upgrade.**
+Version **2.2.0**. **1.x is deprecated — upgrade.**
 
 The .NET client for the Anis Partner API. Targets **net8.0** and **net10.0**.
 
@@ -9,13 +9,14 @@ to get dangerously wrong — the idempotency key, the credential-once rule, reco
 verification — are shaped so you cannot get them wrong quietly.
 
 ```bash
-dotnet add package Anis.Partners --version 2.1.0
+dotnet add package Anis.Partners --version 2.2.0
 ```
 
 - [Getting started](docs/getting-started.md) — enrollment, registration (one application or several), first call
 - [Orders and recovery](docs/orders-and-recovery.md) ← read this before you take money
 - [Routes and permissions](docs/routes-and-permissions.md) — every route, its scope and its limits
 - [Errors](docs/errors.md)
+- [Webhooks](docs/webhooks.md) — verify notifications, manage the endpoint, redeliver
 - [Security and key custody](docs/security.md)
 - [Observability](docs/observability.md) — logs, metrics and traces, on by default
 - [Working sample](samples/Anis.Partners.Sample.Console/README.md) — a command-line integration that drives every route
@@ -140,6 +141,84 @@ Every outcome is a value — a refusal, a timeout and an answer that could not b
 call itself (an invalid request, a signer that failed before anything was sent) or when your own token cancels it.
 (C# does not check a `switch` over a class hierarchy for completeness, hence the `default` case.)
 
+## Meters, Direct recharge and notifications
+
+Three more operation groups sell and follow what the wallet pays for, and two manage notifications. Every
+purchase keeps the rule that makes cards safe: the operation id is yours, persisted with the request before
+anything is sent, and an interrupted call is resumed with the same id.
+
+```csharp
+// Meter charges: scope meter_charges:create (read and packages are implied) or meter_charges:read
+var packages = await anis.MeterCharges.GetMeterPackagesPageAsync(walletId, cancellationToken: ct);
+foreach (var listed in packages.Items)
+    Console.WriteLine($"{listed.Name} {listed.UnitPrice}");
+var package = packages.Items.First();               // or let the buyer choose
+
+var chargeId = Guid.NewGuid();                       // persist it, with the request, BEFORE sending
+var charge = new CreateMeterChargeRequest
+{
+    PackageId     = package.Id,
+    MeterNumber   = "0268000710262",                 // leading zeros are part of the number
+    ExpectedTotal = package.UnitPrice,
+};
+var chargeOutcome = await anis.MeterCharges.CreateAsync(walletId, chargeId, charge, ct);
+
+switch (chargeOutcome)
+{
+    case MeterChargeFinal { Charge.Status: MeterChargeStatus.Succeeded } done:
+        await vault.StoreAsync(done.Charge.Receipt!, ct);        // receipt and every token, in order
+        break;
+    case MeterChargeFinal failed:                                 // failed, refund settled; failed.Charge.Refund says where the money is
+        await support.ReportAsync(failed.Charge, ct);
+        break;
+    case MeterChargeProcessing p:
+        await scheduler.ResumeAfterAsync(chargeId, p.RetryAfter, ct);
+        break;
+    case MeterChargeOutcomeUnknown u:
+        await scheduler.ResumeAfterAsync(chargeId, u.SuggestedDelay, ct);
+        break;
+    case MeterChargeNotPlaced n:                                  // nothing was charged; a new attempt takes a new id
+        await CloseAsNotPlacedAsync(chargeId, n.Refusal, ct);
+        break;
+}
+
+// Direct recharge: scope direct_recharges:create (reads implied) or direct_recharges:read
+var quote = await anis.DirectRechargeProducts.QuoteAsync(walletId, productId, "1500.000", DirectRechargeAmountIn.Fx, ct);
+var rechargeId = Guid.NewGuid();                     // persist it, with the request, BEFORE sending
+var rechargeOutcome = await anis.DirectRecharges.CreateAsync(walletId, rechargeId, new CreateDirectRechargeRequest
+{
+    ProductId    = productId,
+    PayoutAmount = quote.Payout.Amount,
+    ExpectedTotal = quote.Total,
+    Recipient    = [new() { Key = "recipient_number", Value = "01012345678" }],
+}, ct);
+
+// A paused direct recharge takes a recipient correction; 202 confirms acceptance, not the updated read:
+var correction = await anis.DirectRecharges.UpdateRecipientAsync(rechargeId, new UpdateDirectRechargeRecipientRequest
+{
+    Recipient = [new() { Key = "recipient_number", Value = "01098765432" }],
+}, ct);
+Console.WriteLine($"Correction accepted for {correction.OperationId}; read later at {correction.Location}");
+// Or wait for a directRecharge.* webhook. The SDK does not follow Location or retry the PATCH.
+
+// Notifications: no scope; every application manages its own endpoint
+var endpoint = await anis.WebhookEndpoint.SetAsync(new SetWebhookEndpointRequest { Url = "https://pos.example.ly/hooks/anis" }, ct);
+await anis.WebhookEndpoint.TestAsync(ct);
+await foreach (var delivery in anis.WebhookEvents.GetWebhookEventsAsync(new WebhookEventsQuery { Status = WebhookDeliveryStatus.Failed }, ct))
+    await anis.WebhookEvents.RedeliverAsync(delivery.Id, ct);
+```
+
+A meter charge or Direct recharge that is accepted but not finished arrives as `…Processing` (the exact three-member
+acknowledgment, or the full owner state while it is still pending). A finished one arrives as `…Final`, including a
+failed meter charge whose refund is settled: that is a result, not an exception. A failed one with its refund still
+pending stays `…Processing`: money was taken, read again. A refusal that proves nothing was
+taken arrives as `…NotPlaced`; anything that proves nothing about the earlier attempt arrives as `…OutcomeUnknown`.
+See [Orders and recovery](docs/orders-and-recovery.md#meter-charges-and-direct-recharge).
+
+Notifications are verified before their contents are read. Capture the raw request bytes, then call
+`PartnerWebhookVerifier.VerifyAndParseAsync`; see [Webhooks](docs/webhooks.md). The same page explains the
+endpoint challenge and why the event id must be recorded durably before you act on it.
+
 ## Refusals built into the design
 
 **The SDK will not generate your idempotency key.** `operationId` is a required parameter. If the SDK made
@@ -165,8 +244,10 @@ discard the unverified content.
 
 ## What is covered
 
-All 22 published routes, in seven operation groups — `Access`, `Profile`, `Wallets`, `Catalogue`, `Orders`,
-`OwnedCards`, `Diagnostics` — plus `AnisEnrollmentClient` for bootstrap. 39 public error codes, generated
+All 39 routes this version speaks, in twelve operation groups — `Access`, `Profile`, `Wallets`, `Catalogue`, `Orders`,
+`OwnedCards`, `Diagnostics`, `MeterCharges`, `DirectRechargeProducts`, `DirectRecharges`, `WebhookEndpoint`,
+`WebhookEvents` — plus `AnisEnrollmentClient` for bootstrap. The wallet statement and wallet-to-wallet transfer are
+not part of this surface. 48 public error codes, generated
 from the error catalogue, each pinned by a test to its exception type and its order outcome. The signature
 self-check (`Diagnostics`) needs `diagnostics:use` and is the right first call when a signature will not
 verify, because it reports the exact facts the gateway built its base from.
@@ -181,7 +262,7 @@ Not "reviewed and looks right":
 | **Response vectors** | Signed by the **gateway's production signer**. Accept and reject cases — each rejection a single-change derivation, so a failure names the rule. They include the real repeat of a completed order (`201` + `Idempotency-Replayed`), the recovered completion, and a recorded refusal. |
 | **Enrollment proof vectors** | The SDK builds the possession proof, and **Anis's own** proof check rebuilds the message byte for byte and accepts it; the DER form of the same signature is refused. |
 | **Safety-code vectors** | A real key, its thumbprint, the 16-character code Anis staff ask you to read, and every way an entry may be typed (case, dashes, spaces, look-alike letters, the full thumbprint, wrong and short input), derived by an independent Python implementation. |
-| **Contract drift tests** | The route table is diffed against `contracts/partner-public-v1.json` **in both directions**, request profiles and signed answers included; the error codes against `contracts/error-catalogue.json`. |
+| **Contract drift tests** | The route table is diffed against `contracts/partner-public-v1.json` **in both directions**, request profiles and signed answers included; the error codes against `contracts/error-catalogue.json`. New model members and requiredness are checked against the complete OpenAPI schemas; every owner file is pinned by SHA-256 and source revision. |
 | **Pipeline tests** | Every order outcome as the live gateway sends it, every refusal code, cursor paging, the body of each nonce mutation, the idempotency header, money at scale three, settings binding, several applications in one host, a host that retries every call, an order that times out, enrollment end to end, and a tampered response being discarded. |
 | **Telemetry redaction** | Every log line, span tag and metric tag captured, asserted to contain no secret — and asserted non-empty, so it cannot pass vacuously. |
 | **Python cross-checks** | Independent implementations reproduce every request base, every response verdict, every enrollment proof and every safety code — proof the contract is expressible outside .NET. |

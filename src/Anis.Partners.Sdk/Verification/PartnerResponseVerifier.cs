@@ -142,6 +142,11 @@ internal sealed class PartnerResponseVerifier(
         if (key is null)
             throw Fail(ResponseVerificationFailure.UnknownKey, $"keyid {parsed.KeyId} is not a published key version.");
 
+        // A key published for another purpose (for example webhook) must never vouch for an API answer;
+        // a key that publishes no purpose stays accepted because the schema makes it optional.
+        if (key.Purpose is not null && key.Purpose != "answer")
+            throw Fail(ResponseVerificationFailure.KeyRejected, "The selected key must serve API answers.");
+
         if (key.Status is not ("active" or "next" or "retired") || key.NotBefore is null
             || (key.Status == "retired" && key.RetiredAt is null))
         {

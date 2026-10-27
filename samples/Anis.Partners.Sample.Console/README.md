@@ -42,12 +42,21 @@ export Sample__KeyId=3f2a9c14-8d6e-4b21-9f07-5c8ab2d61e43
 | `order-status <operation>` | state only; dispatches nothing |
 | `owned <w>`, `owned-card <w> <sold card>` | owned cards, masked |
 | `reveal <w> <sold card>`, `reveal-invoice <w> <invoice>` | credentials (masked on screen unless `--show-secrets`) |
+| `meter-packages <w>`, `meter-charges <w>` | the meter packages priced for wallet `w`; this application's meter charges for it |
+| `meter-charge <w> <package> <meter number> [--reference r]` | reads the package's `unitPrice`, **persists the intent**, then charges the meter; tokens are masked on screen unless `--show-secrets` |
+| `meter-resume <operation>`, `meter-status <operation>` | the same id and recorded body, freshly signed; a read of the signed state |
+| `recharge-products <w>`, `recharge-product <w> <product>`, `recharge-locations <w> <product> [--search t]` | Direct recharge products, one product with the recipient fields it asks for, and its locations |
+| `recharge-quote <w> <product> <amount> <lyd\|fx>` | a price check; nothing is reserved |
+| `recharge <w> <product> <payout> <Key=value>...` | quotes, **persists the intent**, then creates the Direct recharge; recipient values are masked on screen unless `--show-secrets` |
+| `recharge-resume <operation>`, `recharge-status <operation>`, `recharges <w>` | recovery with the same id and body; one direct recharge; this application's direct recharges |
+| `recipient <operation> <Key=value>...` | requests a correction for `SuspendedDataError`; prints the signed 202 acknowledgement and read Location. Read later with `recharge-status` or wait for a webhook |
+| `webhook-status`, `webhook-set <url>`, `webhook-test`, `webhook-events [--status s]`, `webhook-redeliver <event>` | the notification endpoint and its deliveries |
 | `diagnostic` | the signature self-check: what the gateway saw |
 | `signing-keys` | Anis's published response-signing keys |
 
-Options on every command: `--dry-run` builds and signs the request, prints it exactly as it would go on the
-wire, and sends nothing (no nonce, limit or money is spent); `--preview` sends the reads a command needs (a
-price, an id) and holds back the first request that changes something, printed exactly as signed; `--verbose` shows the SDK's debug logs;
+Options on every command: `--dry-run` builds and signs the request, prints its metadata with product bodies
+and signatures redacted, and sends nothing (no nonce, limit or money is spent); `--preview` sends the reads a command needs (a
+price, an id) and holds back the first request that changes something, printed with the same redactions; `--verbose` shows the SDK's debug logs;
 `--show-secrets` prints credentials in full.
 
 Two options exist only to demonstrate refusals: `--operation <id>` reuses an operation id (a different order
@@ -62,12 +71,26 @@ timeout or failed connection on a read, or your cancellation of an order) says s
 returned order outcome or completed read, `2` refused by Anis, `3` unverifiable response on a route Anis signs (an
 order read, a reveal, enrolment, the self-check), `4` no answer or caller cancellation, `1` a local error.
 
+## Receiving notifications
+
+`WebhookReceiverExample.cs` is a separate, framework-free handler for a web host you already run. It takes the raw
+bytes before any JSON middleware, verifies them with the externally registered URL and your application id from
+configuration and the actual external target supplied independently by a validated host/proxy context. It echoes
+every verified challenge retry. Implement `IWebhookInbox.ProcessOnceAsync` in your business database: insert pending
+work durably, then commit business changes and completion in one transaction; return true only for completed work.
+Pending/busy work gets 503, and a failed handler remains retryable. The example never logs the body,
+a token, a recipient detail or the challenge.
+
 ## The order journal
 
 `order` writes `orders/<operation id>.json` — the wallet, the exact request, and later the outcome —
 **before** the order leaves. `resume` reads it back, so recovery works from a new process with the same id
 and the same body. A completed order's credentials are stored there too (mode 600). A real integration keeps
-the intent in its own database and the credentials in its secret store.
+the intent in its own database and the credentials in its secret store. Meter charges and Direct recharges are kept
+the same way under `orders/products/<kind>/<operation id>.json`; those files hold the request (a Direct recharge's
+recipient details included, mode 600). Product intent is immutable and exclusively published; the last outcome
+name is written separately to `<operation id>.outcome.json` with atomic replacement. A failed outcome write leaves
+recovery intent intact. Protect this folder at rest; it contains recipient input, though never receipts or tokens.
 
 ## Against a local stack
 

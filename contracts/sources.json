@@ -1,0 +1,1172 @@
+{
+  "files": [
+    {
+      "repository": "anis.partners-consumers-gateway",
+      "revision": "10753ebe181c340404ade4fdec88b564d8025d8f",
+      "source": "contracts/error-catalogue.json",
+      "sourceModified": true,
+      "target": "contracts/error-catalogue.json",
+      "sha256": "4048623c5c72688fe7debc4ac62d6294025f2e28403ad29f5e7716e8b2050229"
+    },
+    {
+      "repository": "anis.partners-consumers-gateway",
+      "revision": "10753ebe181c340404ade4fdec88b564d8025d8f",
+      "source": "contracts/openapi/partner-public-v1.json",
+      "sourceModified": true,
+      "target": "contracts/partner-public-v1.json",
+      "sha256": "581ea3de7840266fd993e7994d79a38b747a318f4bbbd0e4cbbc4a55e50b22c8"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/enrollment/EP-01-first-challenge.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/enrollment/EP-01-first-challenge.json",
+      "sha256": "f43a61da4f022b76f5ccc20e259465a281134f77d8ea29e534d1a17d693d0278"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/enrollment/EP-02-reissued-challenge.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/enrollment/EP-02-reissued-challenge.json",
+      "sha256": "f36ad3b26cd074d3be1397c3b475cdfc13fc7768705869db8e41f501bf8a9ed8"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/RQ-01-safe-read-no-query.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/RQ-01-safe-read-no-query.json",
+      "sha256": "1a4c474569e74ca0ad43de7b24e328e1501097bb606bc9cf9d9a0a458f3a4455"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/RQ-02-safe-read-with-cursor.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/RQ-02-safe-read-with-cursor.json",
+      "sha256": "14c714ca55e43c3d850bb75f8cf349d46de8b5f84a755ca6f95589db30872a76"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/RQ-03-authority-is-lower-cased.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/RQ-03-authority-is-lower-cased.json",
+      "sha256": "fa761a42d6d694e67eee71eb1039a5ef4038162ddedf533d22f05ac588a66279"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/RQ-04-authority-with-non-default-port.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/RQ-04-authority-with-non-default-port.json",
+      "sha256": "dced7670f1cdad54fa3a37fde24a0ff7a816f8cca448489c5490528d744b9f1c"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/RQ-05-query-preserved-verbatim.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/RQ-05-query-preserved-verbatim.json",
+      "sha256": "42a31293f6b21c9b6cea3e507949347daeaad376c0b35ec6854fe5242828a351"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/RQ-06-reveal-bodyless-nonce-mutation.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/RQ-06-reveal-bodyless-nonce-mutation.json",
+      "sha256": "d3e459b8efd73607354a1195e8233b6e5cfa75646372c96eaf35481be525d5e7"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/RQ-07-diagnostic-bodyless-nonce-mutation.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/RQ-07-diagnostic-bodyless-nonce-mutation.json",
+      "sha256": "66f7b050fae176f7fc6ff0a1b71deab8142da926bebab8bcc4d1ffd3fd291baf"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/RQ-08-order-mutation.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/RQ-08-order-mutation.json",
+      "sha256": "760d9d53e02b3895d8d27cdb2b147941a7ee89cd6c34cc6cbfd562c777330c61"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/RQ-09-invoice-reveal-bodyless-nonce-mutation.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/RQ-09-invoice-reveal-bodyless-nonce-mutation.json",
+      "sha256": "3f5c266299adf3ed27c4336812f1829013bc30f8f4e602f690eadb76b72d498a"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/request/manifest.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/request/manifest.json",
+      "sha256": "9c6f6639236367016b138ec127e23ba6568189c954cd5943af0277c03c17b233"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M01.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M01.json",
+      "sha256": "6ede30d9c9df31fb7edc1652a253396e16a8389ad102eef53006c6e3bc16920f"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M02.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M02.json",
+      "sha256": "e0c15a1c8660b7558efdbf1e15b954da86c9c52b94d233a2ae4b59ed8f92324e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M03.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M03.json",
+      "sha256": "e076e3d0014889d824cde557f9da801842c5e0b94d4ecf6d8127f55e66f64152"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M04.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M04.json",
+      "sha256": "095c5e0d16fa7dbab593b3e931d28dae2beb9316203c78a6c67d3b171d23d518"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M05.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M05.json",
+      "sha256": "15f69742e4e4b9ca5e2037850b813ced74790a0f244bfc40a87544840478e927"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M06.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M06.json",
+      "sha256": "57c33fc4d45370e04c99158734c77799c07dc3440548c9b126ac0d49bc3f081a"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M07.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M07.json",
+      "sha256": "27262b5f3fc79b3c00dc16612a6cb4fa2bb3f23cbd33e1a978727b25c8f5e0f5"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M08.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M08.json",
+      "sha256": "a381853389e11264434e0c70cd8a561703a64708668316cf3358ba6158414186"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M09.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M09.json",
+      "sha256": "a6d43a2f54479bc38952a057830a41cc549429590284427572f3d4c57e7bd596"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M10.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M10.json",
+      "sha256": "336b64f885939f1b5c4e506439674aac7328a1c2f21284cf0318c4281715d582"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M11.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M11.json",
+      "sha256": "6a349adedf52a0a112020982105b64480a63a7713065826c92dd81e03070e567"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M12.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M12.json",
+      "sha256": "aecf1c9d3302bc6cc5a342a571d353c7dcd37969b587e5007e7d1bdcd10908ef"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M13.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M13.json",
+      "sha256": "5895c522338d4752fedca99d2ee43b79fd6a4e6fd004e24dd7890f44205a0554"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M14.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M14.json",
+      "sha256": "02a2c0e72921d590fe11bb109403f14d4731b301d2aa43edab8024d09b3b9368"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M15.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M15.json",
+      "sha256": "0426bb3f83eb2870d02e32c841f9d1c12b53b71673889f4021eebc587b77782f"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M16.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M16.json",
+      "sha256": "527845b78a4a47e7dd558bf3c0f0293b07f5b3d6414e4e0708e52595d4d5baaa"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M17.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M17.json",
+      "sha256": "a56318dda9cf19dfc826917f0612c8c04472ec7aff571f528edee29413b4566e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M18.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M18.json",
+      "sha256": "091aa79ee1c850a11134b820f28832d78d61c286f897033f7cde09890467447f"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M19.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M19.json",
+      "sha256": "203407afdfb96e7d3e675fbf4535ed2c07b85f5ce3c68d0887a5fb053ff85aab"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M20.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M20.json",
+      "sha256": "2c04913918fd0d5a5c7f3bc35902f48f3190a0db74727bf964dcedd544098362"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200-M21.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200-M21.json",
+      "sha256": "bb557d556937077b8e19f347965fb0b15cacad6c348990f53cb5cb34374bb42e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-001-safe-read-profile-200.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-001-safe-read-profile-200.json",
+      "sha256": "2c86f14a3f8190cdd869adfa7ce04360866da002828844d5c60d35dac4fb5e68"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-002-order-201-created-M01.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-002-order-201-created-M01.json",
+      "sha256": "df54a14ac0c2c04a87571723d630f899fbb82b8a4617bb00a5847ac2601f3d09"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-002-order-201-created.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-002-order-201-created.json",
+      "sha256": "6d5a413d2bba76d2c3e255f4b4c6b07db81dbc5ac4fcc5f043ca8d9b78862f8f"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-003-order-202-processing-M01.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-003-order-202-processing-M01.json",
+      "sha256": "827690e9135e697d14e077a75d39cb12f650b1781752ac99f55879e8de21befa"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-003-order-202-processing.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-003-order-202-processing.json",
+      "sha256": "a4048c2fd45d7d2b24f6e4d912b997fdaf86633013ea65a35836232c851d1d68"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-004-order-201-replayed-M01.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-004-order-201-replayed-M01.json",
+      "sha256": "3d9196573a2637f5754d94a52c8a7b40d91891d12a58736e6084f98144efb805"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-004-order-201-replayed.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-004-order-201-replayed.json",
+      "sha256": "0b2956941245526c5271c9936728d6156c6989bd7c6439e343f4c33c1598b723"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-005-reveal-200-M01.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-005-reveal-200-M01.json",
+      "sha256": "8678e285e799dcf7ffda06181ce278f828611cd4e3f717277dca19a0f99295f4"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-005-reveal-200.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-005-reveal-200.json",
+      "sha256": "2b14342ea1b29395c869c5663bcfd4ac34249096228cdba98a9fefe666f38338"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-006-problem-429-rate-limited.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-006-problem-429-rate-limited.json",
+      "sha256": "c40e8e54e121fe59ea874d0f4835d4e7d21b2f6d640194b14764e7042674a015"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-007-enrollment-200-no-request-binding.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-007-enrollment-200-no-request-binding.json",
+      "sha256": "82ad4317f3750a8e8d3ef16932a381d36bf985c82ced30a3b7b67e3d4eff2b92"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-008-order-200-recovered-M01.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-008-order-200-recovered-M01.json",
+      "sha256": "20508828417b24465205cb6fe68bec6730797481e810f7a062049da90c2f549c"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-008-order-200-recovered.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-008-order-200-recovered.json",
+      "sha256": "0e6765e928a6c95206a22750185815ddbed27b77dcb0da84c2234f2d1afdd9c2"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-009-problem-409-replayed-refusal-M01.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-009-problem-409-replayed-refusal-M01.json",
+      "sha256": "b7018271d73dd8577c1416d9120bec8e23b7763266401ae84d2f7df2fe3a90e9"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-009-problem-409-replayed-refusal.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-009-problem-409-replayed-refusal.json",
+      "sha256": "3342b47974caf4f927dc689ee0e174624564593288106c74c017d02d46378809"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-010-invoice-reveal-200.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-010-invoice-reveal-200.json",
+      "sha256": "f4284886810f2064f3e2ed9e26e58c4a1a5d29c76d8c5707d3a2b8f2d6b5d936"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-101-signed-by-next-key.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-101-signed-by-next-key.json",
+      "sha256": "865d226a89db3b68e7832dd8fc53a222720308e9e7d12d0c3e4e86143d5ebc21"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-102-signed-by-retiring-key.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-102-signed-by-retiring-key.json",
+      "sha256": "dbd370fca46c177928ca22ad039d59300541e019d7d430329a0728b87683311b"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-103-key-document-carries-private-member.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-103-key-document-carries-private-member.json",
+      "sha256": "c187ec3190234770c9d6e5d6c6dcfccec0aacb5fedfc74b8f1c13c652b91e74e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-104-private-member-on-an-unused-key.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-104-private-member-on-an-unused-key.json",
+      "sha256": "b2e021b72d7dcfeb53c668366423f5013041269ef19f17c6f127d0c420d090f6"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-105-published-key-coordinate-not-32-bytes.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-105-published-key-coordinate-not-32-bytes.json",
+      "sha256": "51df100a7003f4f86704ae6c02ebe26378e25882f40201ce078b117bfb437987"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-106-retired-key-after-retired-at.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-106-retired-key-after-retired-at.json",
+      "sha256": "b9bda6bf86a77e24bb8687426a87f95ee46078c9c91a8f025c1aa45234f0fb38"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-107-compromised-key.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-107-compromised-key.json",
+      "sha256": "dbbb9d56972134f7b6b621ade8fdba8bb27c6bf4fbcf80fd3d682751fd80cb67"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-108-next-key-before-not-before.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-108-next-key-before-not-before.json",
+      "sha256": "82408261aa1dd420d091161a98b45e61862eeeab766333be105c7ad2aa278620"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-109-retired-key-missing-retired-at.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-109-retired-key-missing-retired-at.json",
+      "sha256": "fdd24db4d3ee76186c5b759ebef866a0f3021a5c4ff62784ccb8e19776c6169b"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-110-key-missing-not-before.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-110-key-missing-not-before.json",
+      "sha256": "e2b600d9ea668ae0792a395a280197306c9ceb593b9289d501d64be123b154df"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-111-retired-key-at-retired-at.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-111-retired-key-at-retired-at.json",
+      "sha256": "298a20383ee64ce4aa4f1de7c0dfd37729e13a5ef1dfe31b2f5ab6e24830e680"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-112-active-key-before-not-before.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-112-active-key-before-not-before.json",
+      "sha256": "5e40ba2c7fafbf8c3f8aa46e2186c4dea658ed0ab36cb517d9787e5064346982"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/RS-113-retired-key-before-not-before.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/RS-113-retired-key-before-not-before.json",
+      "sha256": "a71f3a90512e0966927eb50b5032e52ebb466e7e55198ea11400ce015aee7def"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/response/manifest.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/response/manifest.json",
+      "sha256": "b8f94ed795347bf6f635a776529b90cc8a54c5f5c93c3aa808271e2b605c0d0e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/safety-code/SC-01.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/safety-code/SC-01.json",
+      "sha256": "f62c93e79b3097212172dd21f9485ab2a7f1d0f83cd3f88019ebf26d7d50dfa8"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/safety-code/SC-02.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/safety-code/SC-02.json",
+      "sha256": "d6fec8195c3a05519df7f1a37a625fff003c89456bf70428ebce32902bd6b5f3"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/safety-code/SC-03.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/safety-code/SC-03.json",
+      "sha256": "2f31e652a6caa61c87ca69211916c61cb0a8443782f0250d6cd1ca70fb560279"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/safety-code/SC-04.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/safety-code/SC-04.json",
+      "sha256": "5152fb903ad2129d46ab69f8956d1af27800c24f87aad37eed6dc41024a08226"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/safety-code/manifest.json",
+      "sourceModified": false,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/safety-code/manifest.json",
+      "sha256": "bfce7d6d51f5477b5846e3155ade84e9fece2770cf66a1b5fa8d980adc1f5a60"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-000-published-vector.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-000-published-vector.json",
+      "sha256": "fdefb1ed7e825c6fff389c46005321a6398abf7eac7c729efcf7eeb429b4af8a"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-001-good.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-001-good.json",
+      "sha256": "a1a93476de6475a32a5daf0a2e2190278e4b6172f3767e56bf44b097cf708838"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-002-next-key.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-002-next-key.json",
+      "sha256": "ec8688674e0c2eb1fabec24fe8db27db28484d42f5f902cdf9a5658ba6696ee0"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-003-body-byte-changed.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-003-body-byte-changed.json",
+      "sha256": "015cd12cbca586f80a6ce5adad2e0ff4a079fc3b153296f28a2bd836e613c840"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-004-digest-changed.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-004-digest-changed.json",
+      "sha256": "768ac55da553b05ce49bda84d261dc1bc5a77fb61b75977a986ea42b43f11f2c"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-005-wrong-tag.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-005-wrong-tag.json",
+      "sha256": "da0ca5c0cab2413269ac3a77e71c9c49e956660d81772fcc978490d59d09a687"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-006-missing-tag.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-006-missing-tag.json",
+      "sha256": "b2ce83d6f4b12fc8781a1bbbb949f65e8d9dfe2710a5d0ea2492e5c02ee7694e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-007-reduced-coverage.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-007-reduced-coverage.json",
+      "sha256": "efe8ec7baf1afb44625c05675a27b0f03a225433698d7e54e0cd7ee93648320b"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-007-reordered-coverage.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-007-reordered-coverage.json",
+      "sha256": "9adabbebc7ead395c7851211b741702f1eeed8ad2ea683d12162122f1cc203aa"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-008-expired-by-one.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-008-expired-by-one.json",
+      "sha256": "85f28ba59539d58f8a129056b14495681533fafa3bca9a55146dbaa9edc36539"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-009-created-future.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-009-created-future.json",
+      "sha256": "f1c2ffd0563dcc6d02b6a2ffdf4e03d3126521e7c735e3adf6b76615ca7444e6"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-010-application-swap.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-010-application-swap.json",
+      "sha256": "108b8ea9f78ebac59dd97a778e9a6f276fcdaea67d8940b800c54d871374f6a9"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-011-url-swap.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-011-url-swap.json",
+      "sha256": "48d4c12940e057ffa193dc2b0310d273b4162e7bafe8c2878a621b332d1595ad"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-012-retired-key.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-012-retired-key.json",
+      "sha256": "224930873af7ce4ed05178297fc42c7a8f5df7b1e421780ad1066a2a85f51743"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-013-compromised-key.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-013-compromised-key.json",
+      "sha256": "76bfe8696cf765109de67efdf18e464423b417b8e46ced3e3d7a0c0fdd947375"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-014-answer-purpose.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-014-answer-purpose.json",
+      "sha256": "2ec06f0b2222ccc2042fba05780f069119d25ad2c792ebacf1e84badd89cce4f"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-015-missing-purpose.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-015-missing-purpose.json",
+      "sha256": "731806311eb54d3f682e9ddfc61ff59351e61bf5607eaba23aae85b0e4683313"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-016-attempt-tampered.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-016-attempt-tampered.json",
+      "sha256": "b016b775c638c18223a92a748b812f267364d731d9fbda2a0d068466e4c7806f"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-017-missing-signature.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-017-missing-signature.json",
+      "sha256": "20fb60000918133ea0524a92a3d7bef3ece118e10c0b5afd6dca195cad05a697"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-018-missing-signature-input.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-018-missing-signature-input.json",
+      "sha256": "28d9d56ee3be164d93d0d0a68bfde529f6452270f5fad34b2f926df24f821226"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-019-missing-event-id.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-019-missing-event-id.json",
+      "sha256": "05dc1b163f63d2dd8ebc0f3127c80a85cecbbcf4894363495fe23a4c20c2cba3"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-020-missing-attempt.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-020-missing-attempt.json",
+      "sha256": "f15b118d011ae9ebf23bda2d2802f0c861660fa336337e281905f8330730b3e1"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-021-missing-application.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-021-missing-application.json",
+      "sha256": "cf38e01a1816cab3e70b1f4e7cd2f90ffb9ced7b1b3838e8987cd503db1329aa"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-022-missing-digest.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-022-missing-digest.json",
+      "sha256": "9d032df982152f95bb949d9e6b88598a7429c7c735763364d88aef8fa351f552"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-023-missing-expires.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-023-missing-expires.json",
+      "sha256": "a65c7f9392fee6d361d0cbc867fc11003ceeb79f0325735c9507ea2195fc986e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-023-wrong-lifetime.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-023-wrong-lifetime.json",
+      "sha256": "c2d0edb99ecf2dd9848a6c9aa8814d6cc77a68de521c3e5dceb6e15c51a7b787"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-024-signature-flipped.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-024-signature-flipped.json",
+      "sha256": "97bf09e85826fab00b0206d70e98f2fabc24e4c519ac501fda7334b84ad9fc33"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-025-signature-der.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-025-signature-der.json",
+      "sha256": "85d9a41218d1b738656fbbe1fc254b538b221b146427b33b89a44bc695783cb7"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-025-signature-truncated.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-025-signature-truncated.json",
+      "sha256": "e0fe62760b4be6e63844f92d83b7fd5df2f499f4d36700514c0d225fc0e2e78f"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-026-wrong-algorithm.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-026-wrong-algorithm.json",
+      "sha256": "9d0ce6db199cf2b5e966232104033341d4b43e7b0e01055f00847e9f9fed8bbb"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-027-wrong-label.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-027-wrong-label.json",
+      "sha256": "a2f5cb5e19ad1172a86590de72a7bd5805052e4844487713d4d3b0eddbd113b4"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-028-unknown-key.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-028-unknown-key.json",
+      "sha256": "37691470957e57287c708f5b26a8adf0ea11b3c7dc08df530d37f1959b4dde01"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-029-before-not-before.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-029-before-not-before.json",
+      "sha256": "6251e2df7a5922ad3197c7e177f5e1590aef48b3317a6cd4d1b4b2e7ec7f9da9"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-030-bad-coordinates.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-030-bad-coordinates.json",
+      "sha256": "9a956f6ff4a98327dfa06b27d030699f10d9fb09fd9d7952fd006b1b1e0ace2c"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-030-private-member.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-030-private-member.json",
+      "sha256": "a2341a5013df1bdd515b445785e8aa7b01fe4c105905c440681e5077a1517ac7"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-031-envelope-event-id.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-031-envelope-event-id.json",
+      "sha256": "8e668bea9a2479142f024af9ddeb9a6cfbed4443d35ed8949ac2f778d5c9e511"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-032-envelope-application.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-032-envelope-application.json",
+      "sha256": "4a0a387a74817f7d98b37213494a473f323dba5f90baf5d0b5c113f87107bfb1"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-033-envelope-invalid.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-033-envelope-invalid.json",
+      "sha256": "2d7dda3b4770c1ff8bb3c4b4472da5e643e8b8975ffc5ae8331770af03cc647d"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-034-unknown-event-type.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-034-unknown-event-type.json",
+      "sha256": "0626f741fe22905c72ac053be06761d24e8ab2597039a906bef9cdf6931b8e7a"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-035-expiry-boundary.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-035-expiry-boundary.json",
+      "sha256": "e6ad103675830edb35fe70a780eaccab972c25e69ea575deabdcbb47d353f16b"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-036-future-boundary.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-036-future-boundary.json",
+      "sha256": "2e2fb60a5b38887856fe8eb498fbcb37916e3be3ff722efbe0930252c4d0bb69"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-037-not-before-boundary.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-037-not-before-boundary.json",
+      "sha256": "95d5809bcd263b3562f094cc0ada1ed758ebaac23c82861ff3012c757929e21d"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-038-query-target.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-038-query-target.json",
+      "sha256": "966461f24c8a8d097350e43345de51aad3a4120845d1dc2bdcdc9700b4d15c53"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-039-mixed-header-casing.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-039-mixed-header-casing.json",
+      "sha256": "fe6783e31d5f47cbb12c354237c01d39b967c5e64d3383aff407a9d5fa14de85"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-040-fixture-circle-completed.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-040-fixture-circle-completed.json",
+      "sha256": "941b36cbbaf8ead2b0891ea48ef45ec595ee119ce88bce1cb993bb3371928be7"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-041-fixture-circle-paid.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-041-fixture-circle-paid.json",
+      "sha256": "a38edad1a7660ac7bd2674e16c105fdae6c810645dfb91e7c860e61f3ac4f9c5"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-042-fixture-circle-partially-refunded.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-042-fixture-circle-partially-refunded.json",
+      "sha256": "23f2722ed9b9c7bcf3c0040213c7f0ce8945ca06cec27df67fa0754d2e912f85"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-043-fixture-circle-payment-failed.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-043-fixture-circle-payment-failed.json",
+      "sha256": "89659337e89a689a68fa37f0edc4f3e13c2389fc9eb67ce073e087802761202e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-044-fixture-circle-rejected.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-044-fixture-circle-rejected.json",
+      "sha256": "6d5f038d011baaf6d35bac3c7d0e952d77350fb905b38ea843633344424487e5"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-045-fixture-circle-suspended.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-045-fixture-circle-suspended.json",
+      "sha256": "2b5c8c5782c6f4e71226fa1ee231b4e71b96d72f9f7fd681ff410c34fa7af838"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-046-fixture-circle-suspended-after-recipient-fix.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-046-fixture-circle-suspended-after-recipient-fix.json",
+      "sha256": "fa0f646f79ecd7f2438f357a9290fa02ca8c00b36d8a8f2865c07ccc014ffd41"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-047-fixture-meter-failed-not-charged.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-047-fixture-meter-failed-not-charged.json",
+      "sha256": "04c720b835f2a49124fd66520ab6771323e3451a818e866ff1c75058cb0f0bc5"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-048-fixture-meter-failed-refunded.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-048-fixture-meter-failed-refunded.json",
+      "sha256": "c7756fed2fc25d6fa0ce2c5b8ec288946b94bb7fac840e0ece04f88262e1dfaa"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-049-fixture-meter-succeeded.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-049-fixture-meter-succeeded.json",
+      "sha256": "4b08b63b6e2d467f3cd72fa162bde1e5190fb154cdd9ac5b3cbe4d5b0ae4c56a"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-050-method-unexpected.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-050-method-unexpected.json",
+      "sha256": "e003b3c84ede677381db1aa1f347b74500f67f1edd48149aeb93d1950447fcfd"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-051-attempt-zero.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-051-attempt-zero.json",
+      "sha256": "00c5d97722bf561b3647eacaad549753dfa19050dfbdba298630cdb2dbefbd2c"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-052-attempt-invalid.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-052-attempt-invalid.json",
+      "sha256": "2d0fc19e835d19d06d11b0e76fabcd0ebab57486cf5af3a55733d196d3649add"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-053-duplicate-signature-header.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-053-duplicate-signature-header.json",
+      "sha256": "b8fd27c3abef83c53c6ec465e0037fb4fab50ca2804a7c1ef4f3c1b96ced693f"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-054-duplicate-input-header.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-054-duplicate-input-header.json",
+      "sha256": "83e539ff1607973423941404e738c3d99d92de107efe9b8ab72f88c765e3c42e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-055-duplicate-signature-label.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-055-duplicate-signature-label.json",
+      "sha256": "52f330b31538a96240cd279aab018a4cd1ae14770c81b2d412774e32e94faf29"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-056-duplicate-input-label.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-056-duplicate-input-label.json",
+      "sha256": "d514dd18ac482b119cf99cd41d7b77e33918ce6a449ee69b504bebc3bdaa3821"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-057-duplicate-created.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-057-duplicate-created.json",
+      "sha256": "7399f54e530240781c41758dab787cfe1b20aa28f0432938e9d3440afd00650e"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-058-missing-created.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-058-missing-created.json",
+      "sha256": "34de891c06c6d4a8f49bfc33b9d3b28b445b5f6d9726fea270c1aea8c93b0419"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-059-attempt-negative.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-059-attempt-negative.json",
+      "sha256": "262a3702e136b7d546785ab2589bea19a3f04375876f696566673708b4dc755c"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-060-envelope-missing-time.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-060-envelope-missing-time.json",
+      "sha256": "1aeaf72cb33d410f310b1c4c2771307c8603b14dcb8e10bfb5c967f7821898c0"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-061-not-before-missing-time.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-061-not-before-missing-time.json",
+      "sha256": "4b90bc0d03a82380b45bd1cc3623ee2a2105c3bb68e706c41ec8f3402e7c7b02"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-062-retired-at-missing-time.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-062-retired-at-missing-time.json",
+      "sha256": "4df811dcd4bcf62d94727e26ebe0483eaf14bf0e6d233b65f38fd51b749a36e4"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-063-envelope-missing-seconds.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-063-envelope-missing-seconds.json",
+      "sha256": "0f4cf2896d8cea4b1e62aba760bb3ac71c7b2e481b1f203fd6bd3352f7451bf2"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-064-not-before-missing-seconds.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-064-not-before-missing-seconds.json",
+      "sha256": "5b3ff93febc5aac15d5cf5f6652b7cf3a15c3653564288dca8c122ff9e2a24ed"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-065-retired-at-missing-seconds.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-065-retired-at-missing-seconds.json",
+      "sha256": "2e8fc25c13529cb165d7bad1ac5731359f139483071843d8abe53b54024b1c37"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-066-envelope-missing-offset.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-066-envelope-missing-offset.json",
+      "sha256": "4eb86cbb56bc3320a2bf2bfaf1539ea5a96400cc41ce63a62de20bb6674239ca"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-067-not-before-missing-offset.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-067-not-before-missing-offset.json",
+      "sha256": "4a9fff481eb6f39fe472ead92837189aed27f1913d59422cc09f16a3b0e9a4ba"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-068-retired-at-missing-offset.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-068-retired-at-missing-offset.json",
+      "sha256": "99ada318469b1c08ddf200ac42ddde3b42e2847dccf0ae5d344df95571909de2"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-069-not-before-one-tick.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-069-not-before-one-tick.json",
+      "sha256": "8b3c25aa7fb695fdfdb43761636b517e5e16d48a11d1e85d46f93ca7417f0273"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/WH-070-timestamp-offset-precision.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/WH-070-timestamp-offset-precision.json",
+      "sha256": "e9147279872384178b2f62e66971db9ef5b9b7e04bcc86dae5c2f06bf3396552"
+    },
+    {
+      "repository": "anis.partners-sdk-conformance",
+      "revision": "98c84008b625b6243f27e650f288a62214ecdb8a",
+      "source": "vectors/webhook/manifest.json",
+      "sourceModified": true,
+      "target": "tests/Anis.Partners.Sdk.Tests/vectors/webhook/manifest.json",
+      "sha256": "ac415a95f46702a77b40a74a927b723c663759e5734e65e8c0b5af1c98909272"
+    }
+  ]
+}

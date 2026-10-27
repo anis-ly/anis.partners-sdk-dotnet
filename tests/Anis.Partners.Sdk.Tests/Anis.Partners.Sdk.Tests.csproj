@@ -23,6 +23,7 @@
   <ItemGroup>
     <!-- Copied once, as Content below; not also as the SDK's default None items. -->
     <None Remove="vectors/**" />
+    <None Remove="fixtures/**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,6 +41,7 @@
   <ItemGroup>
     <Content Include="$(ConformanceVectors)/request/*.json" Link="vectors/request/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(ConformanceVectors)/response/*.json" Link="vectors/response/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(ConformanceVectors)/webhook/*.json" Link="vectors/webhook/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(ConformanceVectors)/enrollment/*.json" Link="vectors/enrollment/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(ConformanceVectors)/safety-code/*.json" Link="vectors/safety-code/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
@@ -53,7 +55,18 @@
   </Target>
 
   <ItemGroup>
-    <Content Include="../../contracts/*.json" Link="contracts/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The owner-published list answers, byte for byte; the list models are held against them. -->
+    <Content Include="fixtures/lists/*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="../../contracts/**/*" Link="contracts/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../../samples/Anis.Partners.Sample.Console/ProductJournal.cs" Link="Sample/ProductJournal.cs" />
+    <Compile Include="../../samples/Anis.Partners.Sample.Console/WebhookReceiverExample.cs" Link="Sample/WebhookReceiverExample.cs" />
+    <Compile Include="../../samples/Anis.Partners.Sample.Console/WireLog.cs" Link="Sample/WireLog.cs" />
   </ItemGroup>
 
   <ItemGroup>

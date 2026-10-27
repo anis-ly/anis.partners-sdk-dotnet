@@ -64,6 +64,19 @@ public sealed class ErrorMappingTests
         // A badly built signed request: with the SDK, something rewrote it on its way, possibly on a resend.
         ["malformed_signed_request"] = (typeof(AnisApiException), OrderRefusalOutcome.Unknown),
 
+        // Meter, direct recharge and notification refusals: each is a definitive answer from the owner or gateway.
+        ["meter_rejected"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+        ["package_unavailable"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+        ["direct_recharge_product_unavailable"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+        ["amount_out_of_range"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+        ["direct_recharge_not_suspended"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+        ["webhook_endpoint_invalid"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+        ["webhook_endpoint_unverified"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+
+        // Staging-only network rules: published codes, no SDK call produces them.
+        ["network_not_removable"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+        ["partner_network_limit_reached"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
+
         // Access stops.
         ["key_not_revocable"] = (typeof(AnisApiException), OrderRefusalOutcome.NotPlaced),
 

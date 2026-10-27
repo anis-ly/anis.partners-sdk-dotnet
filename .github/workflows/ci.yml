@@ -23,6 +23,9 @@ jobs:
       - name: Build
         run: dotnet build Anis.Partners.Sdk.slnx -c Release
 
+      - name: Check generated errors against the vendored catalogue
+        run: python3 tools/generate-errors.py --check
+
       - name: Test on net8.0 and net10.0
         run: dotnet test Anis.Partners.Sdk.slnx -c Release --no-build
 
