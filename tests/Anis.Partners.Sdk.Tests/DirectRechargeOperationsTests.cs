@@ -25,6 +25,7 @@ public sealed class DirectRechargeOperationsTests
         ],
         Note = "Family support",
         ExternalReference = "POS-77-TR-551",
+        ContactPhone = "0912345678",
     };
 
     [Theory]
@@ -218,8 +219,9 @@ public sealed class DirectRechargeOperationsTests
         Assert.Equal(Operation, processing.OperationId);
         Assert.Equal("directRecharge", processing.Accepted!.OperationType);
         Assert.Equal(Operation.ToString("D"), request.Headers.GetValues("Idempotency-Key").Single());
-        Assert.Equal(["expectedTotal", "externalReference", "note", "payoutAmount", "productId", "recipient"],
+        Assert.Equal(["contactPhone", "expectedTotal", "externalReference", "note", "payoutAmount", "productId", "recipient"],
             sent.RootElement.EnumerateObject().Select(member => member.Name).Order(StringComparer.Ordinal));
+        Assert.Equal("0912345678", sent.RootElement.GetProperty("contactPhone").GetString());
         Assert.Equal(2, sent.RootElement.GetProperty("recipient").GetArrayLength());
         Assert.DoesNotContain("price", System.Text.Encoding.UTF8.GetString(body), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("whatsapp", System.Text.Encoding.UTF8.GetString(body), StringComparison.OrdinalIgnoreCase);
