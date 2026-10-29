@@ -57,6 +57,15 @@ public sealed record CreateDirectRechargeRequest
     /// <summary>ExternalReference.</summary>
     [JsonPropertyName("externalReference")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? ExternalReference { get; init; }
+
+    /// <summary>
+    /// ContactPhone: the phone the Anis exchanges team calls about this direct recharge. A Libyan mobile
+    /// (<c>09[1-5]</c> plus 7 digits) or an international number (<c>+</c> or <c>00</c>, then 8 to 15 digits);
+    /// spaces, <c>-</c>, <c>(</c> and <c>)</c> are ignored. When omitted, Anis uses the phone saved for the partner.
+    /// It is part of the request's idempotency: the same key with a different value is an <c>idempotency_conflict</c>.
+    /// </summary>
+    [JsonPropertyName("contactPhone")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? ContactPhone { get; init; }
 }
 
 /// <summary>A recipient field supplied by the partner.</summary>
