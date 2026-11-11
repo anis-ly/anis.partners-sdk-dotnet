@@ -1,6 +1,6 @@
 # Anis.Partners
 
-Version **2.2.0**. **1.x is deprecated — upgrade.**
+Version **2.3.0**. **1.x is deprecated — upgrade.**
 
 The .NET client for the Anis Partner API, for **.NET 8** and **.NET 10**.
 
@@ -12,7 +12,7 @@ Version 2.2 adds electricity meter charges, direct recharges, webhook endpoint m
 notifications Anis sends to you.
 
 ```bash
-dotnet add package Anis.Partners --version 2.2.0
+dotnet add package Anis.Partners --version 2.3.0
 ```
 
 ```csharp

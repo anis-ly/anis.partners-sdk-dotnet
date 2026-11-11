@@ -1,6 +1,6 @@
 # Anis.Partners — .NET SDK
 
-Version **2.2.0**. **1.x is deprecated — upgrade.**
+Version **2.3.0**. **1.x is deprecated — upgrade.**
 
 The .NET client for the Anis Partner API. Targets **net8.0** and **net10.0**.
 
@@ -9,7 +9,7 @@ to get dangerously wrong — the idempotency key, the credential-once rule, reco
 verification — are shaped so you cannot get them wrong quietly.
 
 ```bash
-dotnet add package Anis.Partners --version 2.2.0
+dotnet add package Anis.Partners --version 2.3.0
 ```
 
 - [Getting started](docs/getting-started.md) — enrollment, registration (one application or several), first call
