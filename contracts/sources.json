@@ -2,19 +2,19 @@
   "files": [
     {
       "repository": "anis.partners-consumers-gateway",
-      "revision": "10753ebe181c340404ade4fdec88b564d8025d8f",
+      "revision": "fcfb4f0ea1f75a9546ba28e94c699a1a9d95d23c",
       "source": "contracts/error-catalogue.json",
-      "sourceModified": true,
+      "sourceModified": false,
       "target": "contracts/error-catalogue.json",
       "sha256": "4048623c5c72688fe7debc4ac62d6294025f2e28403ad29f5e7716e8b2050229"
     },
     {
       "repository": "anis.partners-consumers-gateway",
-      "revision": "10753ebe181c340404ade4fdec88b564d8025d8f",
+      "revision": "fcfb4f0ea1f75a9546ba28e94c699a1a9d95d23c",
       "source": "contracts/openapi/partner-public-v1.json",
       "sourceModified": true,
       "target": "contracts/partner-public-v1.json",
-      "sha256": "581ea3de7840266fd993e7994d79a38b747a318f4bbbd0e4cbbc4a55e50b22c8"
+      "sha256": "1eb3aeaf583cf3c0d1cd01b68e697e241ced5995a002d61cf26e11325ad106e0"
     },
     {
       "repository": "anis.partners-sdk-conformance",

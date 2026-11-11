@@ -28,7 +28,7 @@ internal sealed class PartnerTransport(
     AnisPartnersClientOptions options,
     ILogger<PartnerTransport>? logger = null)
 {
-    private const string UserAgent = "Anis.Partners/2.2.0";
+    private const string UserAgent = "Anis.Partners/2.3.0";
 
     private readonly ILogger _logger = logger ?? NullLogger<PartnerTransport>.Instance;
 
